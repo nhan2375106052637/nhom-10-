@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block sub %}<p class="sub">Hệ thống đoán tuần tới mỗi danh mục bán được bao nhiêu, rồi tính sẵn số hàng nên nhập và số tiền cần chi.</p>{% endblock %}
+{% block content %}
+<section class="summary" id="sum">Đang tính đề xuất...</section>
+<section class="card">
+  <div class="head"><h2>Nên nhập bao nhiêu tuần <span id="wk"></span></h2>
+    <div class="actions" style="margin:0"><button class="btn" id="csv">Sao chép (dán vào Excel)</button><button class="btn primary" id="approve">Duyệt danh sách nhập</button></div></div>
+  <p class="howto">Danh mục cần xử lý gấp nằm trên cùng. Bấm một dòng để thử tình huống ở trang Mô phỏng.</p>
+  <div class="scroll"><table id="plan"></table></div><p id="planMsg" class="small"></p>
+  <p class="note">Mức phục vụ 95%, nhà cung cấp giao sau 1 tuần, xem xét nhập mỗi tuần. Tồn kho hiện tại là số mô phỏng (Olist không có dữ liệu tồn kho).</p>
+</section>
+<section class="card">
+  <div class="head"><h2 id="fcTitle">Nhu cầu theo tuần</h2><label class="small muted">Xem danh mục <select id="cat" aria-label="Danh mục"></select></label></div>
+  <p class="howto"><b>Cách đọc:</b> đường xanh là số bán thật; đường cam là mô hình dự báo; đường đứt nét là cách đơn giản "tuần sau bằng tuần này". Bên phải vạch đứt là các tuần kiểm thử mô hình chưa từng thấy; chấm cam cuối cùng là dự báo tuần tới.</p>
+  <div class="stats" id="fcStats"></div>
+  <div id="fc" class="chart tall"></div>
+</section>
+<details class="tech">
+  <summary>Chi tiết kỹ thuật <span>(so sánh mô hình, mô phỏng chính sách: dành cho người phân tích)</span></summary>
+  <section class="grid two">
+    <div class="card"><h2>Mô phỏng 3 chính sách nhập hàng</h2><div class="scroll"><table id="sim"></table></div><p class="note">15 tuần kiểm thử × 20 danh mục, nhu cầu thực tế; phần vượt tồn kho là hàng lỡ bán.</p></div>
+    <div class="card"><h2 id="trT">Diễn biến tồn kho mô phỏng</h2><div id="tr" class="chart"></div></div>
+    <div class="card"><h2>So sánh mô hình trên tập kiểm thử</h2><div class="scroll"><table id="mt"></table></div><p class="note" id="mtN"></p></div>
+    <div class="card"><h2>Yếu tố mô hình dựa vào nhiều nhất</h2><div id="imp" class="chart small"></div><p class="note">Permutation Importance trên tập kiểm thử.</p></div>
+  </section>
+</details>
+{% endblock %}
+{% block script %}
+<script>
+let P;
+async function load(cat){
+  const d=await api('/api/forecast'+(cat?'?cat='+cat:''));P=d.plan;
+  if(!$('#cat').options.length)d.categories.forEach(c=>$('#cat').add(new Option(c.name,c.id)));
+  $('#cat').value=d.cat;$('#wk').textContent=d.week;$('#fcTitle').textContent='Nhu cầu theo tuần: '+d.name;
+  const s=d.series;
+  $('#fcStats').replaceChildren(stat('Dự báo bán tuần tới',fmt.int(d.next)+' sản phẩm'),stat('Sai số mô hình (WAPE)',fmt.pct(s.wape_gb*100)),stat('Sai số cách đơn giản Naive (WAPE)',fmt.pct(s.wape_naive*100)));
+  const w=s.weeks.slice(-40),x=[...w,d.week],t0=w.findIndex(k=>s.gb[k]!=null);
+  Charts.line('#fc',{x,series:[{name:'Thực tế',values:[...s.actual.slice(-40),null]},
+    {name:'Gradient Boosting',values:[...w.map(k=>s.gb[k]??null),d.next],dots:true},
+    {name:'Naive',values:[...w.map(k=>s.naive[k]??null),null],dash:true}],fmt:fmt.int,marker:t0>=0?t0:null,markerLabel:'Bắt đầu kiểm thử'});
+  const ORD={'Nguy cơ hết hàng':0,'Dưới ROP':1,'Tồn dư':2,'An toàn':3};
+  P=[...P].sort((a,b)=>(ORD[a.status]??9)-(ORD[b.status]??9)||b.q*b.price-a.q*a.price);
+  table('#plan',['Danh mục','Tình trạng','Nên nhập (Q)','Số tiền cần','Bán dự kiến/tuần','Tồn hiện tại','Tồn an toàn (SS)','Điểm đặt hàng (ROP)','Độ lệch dự báo (σ)'],
+    P.map(p=>[p.name,statusBadge(p.status),el('b',{},p.q>0?fmt.int(p.q)+' sp':'Chưa cần'),p.q>0?fmt.money(p.q*p.price):'–',fmt.int(p.yhat),fmt.int(p.stock),fmt.int(p.ss),fmt.int(p.rop),fmt.num(p.sigma,1)]),
+    i=>location.href='/what-if?cat='+P[i].category);
+  const need=P.filter(p=>p.q>0),urgent=P.filter(p=>p.status==='Nguy cơ hết hàng'),tq=need.reduce((a,p)=>a+p.q,0),tv=need.reduce((a,p)=>a+p.q*p.price,0);
+  $('#sum').replaceChildren(el('div',{},'Tuần ',el('b',{},d.week),' nên nhập ',el('span',{class:'big'},fmt.int(tq)+' sản phẩm'),' cho ',el('b',{},need.length+' danh mục'),', tổng khoảng ',el('span',{class:'big'},fmt.money(tv)),'.'),
+    el('div',{class:'small',style:'margin-top:4px'},urgent.length?`Ưu tiên ${urgent.length} danh mục nguy cơ hết hàng: ${urgent.slice(0,4).map(p=>p.name).join(', ')}${urgent.length>4?'…':''}.`:'Không có danh mục nào nguy cơ hết hàng.'));
+  table('#mt',['Mô hình','MAE','RMSE','WAPE','Xu hướng lệch'],Object.entries(d.table).map(([k,v])=>[k,fmt.num(v.mae,2),fmt.num(v.rmse,2),fmt.pct(v.wape*100,2),(v.bias>0?'+':'')+fmt.pct(v.bias*100,2)]));
+  $('#mtN').textContent=`Huấn luyện ${fmt.int(d.split.train)} quan sát, kiểm thử ${fmt.int(d.split.test)} quan sát (${d.split.test_from} đến ${d.split.test_to}). Gradient Boosting tốt hơn Naive ở ${d.better}/${d.n_cat} danh mục.`;
+  Charts.bars('#imp',d.importance.slice(0,8),{fmt:v=>fmt.num(v,4)});
+  table('#sim',['Chính sách','Nhu cầu không đáp ứng','Số tuần thiếu hàng','Tồn kho trung bình','Giá trị hàng lỡ bán'],Object.entries(d.sim).map(([k,v])=>[k,fmt.pct(v.unmet*100,2),fmt.int(v.short_weeks),fmt.int(v.avg_stock),fmt.money(v.lost_value)]));
+  $('#trT').textContent='Diễn biến tồn kho mô phỏng: '+d.name;
+  Charts.line('#tr',{x:d.trace.weeks,series:[{name:'Nhu cầu',values:d.trace.demand,dash:true},{name:'Tồn cuối tuần: Kinh nghiệm',values:d.trace.exp},{name:'Tồn cuối tuần: DSS',values:d.trace.dss}],fmt:fmt.int,colors:[getComputedStyle(document.documentElement).getPropertyValue('--s0'),getComputedStyle(document.documentElement).getPropertyValue('--s2'),getComputedStyle(document.documentElement).getPropertyValue('--s1')]});
+}
+$('#cat').onchange=e=>load(e.target.value);
+$('#csv').onclick=async()=>{const rows=[['danh_muc','du_bao','ton','ss','rop','nhap_q','von_vnd','trang_thai'],...P.map(p=>[p.name,Math.round(p.yhat),Math.round(p.stock),Math.round(p.ss),Math.round(p.rop),Math.round(p.q),Math.round(p.q*p.price),p.status])];
+  const t=rows.map(r=>r.join(',')).join('\n');try{await navigator.clipboard.writeText(t);$('#planMsg').textContent='Đã sao chép, dán vào Excel được.'}catch(e){$('#planMsg').textContent='Trình duyệt chặn sao chép; hãy chọn bảng và sao chép thủ công.'}};
+$('#approve').onclick=async()=>{const q=P.reduce((a,p)=>a+p.q,0),v=P.reduce((a,p)=>a+p.q*p.price,0);
+  await api('/api/decision',{decision:'approve',target:'plan:'+$('#wk').textContent,action:`Duyệt nhập ${Math.round(q)} đơn vị, ${fmt.money(v)}`,agent:'DSS Engine',text:'',original:''});
+  $('#planMsg').textContent=`Đã duyệt ${fmt.int(q)} đơn vị (${fmt.money(v)}) và ghi Audit log. Theo QĐ-01, lô từ 250 triệu đồng cần trưởng bộ phận duyệt thêm.`};
+load(new URLSearchParams(location.search).get('cat'));
+</script>
+{% endblock %}

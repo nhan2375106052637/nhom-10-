@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block sub %}<p class="sub">Điều gì cần chú ý tuần này. Bấm “Xử lý” để mở đúng phân hệ.</p>{% endblock %}
+{% block content %}
+<section class="kpis" id="kpis"></section>
+<section class="card narrator">
+  <div class="head"><h2>AI tóm tắt tình hình</h2><button id="narr" class="btn primary">Viết tóm tắt</button></div>
+  <div id="narrOut" class="muted">AI đọc các con số trên trang này và viết vài câu tóm tắt cho nhà quản trị.</div>
+</section>
+<section class="split">
+  <div class="card">
+    <div class="head"><h2>Việc cần làm tuần này</h2><div class="tabs" id="tabs"></div></div>
+    <div id="alerts" class="feed" style="max-height:640px"></div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+    <div class="card"><h2>Nhu cầu theo tháng (dòng sản phẩm)</h2><div id="dm" class="chart"></div></div>
+    <div class="card"><h2>Tỷ lệ giao trễ theo tháng</h2><div id="late" class="chart"></div></div>
+    <div class="card"><h2>Điểm đánh giá theo mức độ trễ</h2><div id="rv" class="chart small"></div>
+      <p class="note">Giao trễ càng lâu, điểm đánh giá càng thấp: lý do cần cảnh báo sớm.</p></div>
+  </div>
+</section>
+{% endblock %}
+{% block script %}
+<script>
+let D,tab='Tất cả';
+function render(){
+  const kinds=['Tất cả','Tồn kho','Giao hàng','Seller'];
+  $('#tabs').replaceChildren(...kinds.map(k=>el('button',{class:'tab'+(k===tab?' on':''),onclick(){tab=k;render()}},k)));
+  const list=D.alerts.filter(a=>tab==='Tất cả'||a.kind===tab);
+  $('#alerts').replaceChildren(...list.map(a=>el('a',{class:'alert',href:a.link},
+    a.kind==='Tồn kho'?statusBadge(a.status):el('span',{class:'badge st '+(a.kind==='Seller'?'serious':'critical')},a.status),
+    el('span',{class:'grow'},el('b',{},a.title),el('br'),el('span',{class:'muted small'},a.detail)),el('span',{class:'go'},'Xử lý →'))));
+}
+(async()=>{
+  D=await api('/api/overview');
+  $('#kpis').replaceChildren(...D.kpis.map(k=>el('div',{class:'kpi'+(k.alert?' alert':'')},el('span',{class:'label'},k.label),el('strong',{},k.value),el('span',{class:'delta'},k.note))));
+  Charts.line('#dm',{x:D.demand.map(d=>d.month),series:[{name:'Nhu cầu',values:D.demand.map(d=>d.value)}],fmt:fmt.int});
+  Charts.line('#late',{x:D.late.map(d=>d.month),series:[{name:'Tỷ lệ trễ',values:D.late.map(d=>d.value*100)}],fmt:v=>fmt.pct(v)});
+  Charts.bars('#rv',D.review,{fmt:v=>fmt.num(v,2)});
+  render();
+})();
+$('#narr').onclick=()=>aiCall('#narrOut','#narr',()=>api('/api/narrator',{}));
+</script>
+{% endblock %}

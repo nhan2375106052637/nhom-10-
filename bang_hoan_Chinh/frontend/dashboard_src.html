@@ -1,0 +1,543 @@
+<title>Kho Vận DSS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: planning-desk shell — navy sidebar of modules, cool-neutral work surface, summary-before-detail panels */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --panel2:#f8f9fb; --fg:#141922; --fg2:#4b5462; --muted:#7f8794; --line:#e1e5eb; --line2:#eef1f4;
+  --side:#10233f; --side-fg:#dbe5f3; --side-muted:#8ea3c0; --side-active:#1d3a63;
+  --accent:#2a78d6; --accent-soft:#e3eefb; --s2:#eb6834; --s3:#1baf7a; --s4:#e34948;
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
+  --good-bg:#e6f5e6; --warn-bg:#fdf3dc; --serious-bg:#fcece4; --crit-bg:#fae6e6;
+  --good-fg:#0a6e0a; --warn-fg:#8a5a00; --serious-fg:#a2431b; --crit-fg:#b02828;
+  --font:"Be Vietnam Pro", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1116; --panel:#161a21; --panel2:#1b2028; --fg:#eceff3; --fg2:#bcc3cd; --muted:#8a919c; --line:#2a3039; --line2:#20252d;
+  --side:#0a1424; --side-fg:#d4deeb; --side-muted:#7f93ad; --side-active:#16294a;
+  --accent:#3987e5; --accent-soft:#1a2b42; --s2:#d95926; --s3:#199e70; --s4:#e66767;
+  --good-bg:#11291a; --warn-bg:#2e2510; --serious-bg:#2f1d14; --crit-bg:#311718;
+  --good-fg:#4cc94c; --warn-fg:#f5c451; --serious-fg:#f09a77; --crit-fg:#f07b7b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1116; --panel:#161a21; --panel2:#1b2028; --fg:#eceff3; --fg2:#bcc3cd; --muted:#8a919c; --line:#2a3039; --line2:#20252d;
+  --side:#0a1424; --side-fg:#d4deeb; --side-muted:#7f93ad; --side-active:#16294a;
+  --accent:#3987e5; --accent-soft:#1a2b42; --s2:#d95926; --s3:#199e70; --s4:#e66767;
+  --good-bg:#11291a; --warn-bg:#2e2510; --serious-bg:#2f1d14; --crit-bg:#311718;
+  --good-fg:#4cc94c; --warn-fg:#f5c451; --serious-fg:#f09a77; --crit-fg:#f07b7b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.5}
+.shell{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+aside{background:var(--side);color:var(--side-fg);padding-block:22px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:14px;display:flex;flex-direction:column;gap:22px}
+.side-in{position:sticky;top:22px;display:flex;flex-direction:column;gap:22px}
+.brand{display:flex;flex-direction:column;gap:2px;padding-left:6px}
+.brand b{font-size:17px;letter-spacing:.01em;font-weight:700;color:#fff}
+.brand span{font-size:12px;color:var(--side-muted)}
+nav{display:flex;flex-direction:column;gap:3px}
+nav button{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:var(--side-fg);font-size:13.5px}
+nav button:hover{background:rgba(255,255,255,.06)}
+nav button:focus-visible{outline:2px solid #6da7ec;outline-offset:1px}
+nav button[aria-selected="true"]{background:var(--side-active);color:#fff;font-weight:600}
+nav button i{font-style:normal;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:11px;font-weight:700;background:rgba(255,255,255,.08);color:var(--side-muted);font-family:var(--mono)}
+nav button[aria-selected="true"] i{background:#2a78d6;color:#fff}
+.side-foot{margin-top:auto;font-size:11.5px;color:var(--side-muted);line-height:1.55;padding-left:6px}
+main{min-width:0;padding-block:22px 40px;padding-left:28px;padding-right:max(28px,env(safe-area-inset-right,0px))}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px}
+.top h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.top p{margin:2px 0 0;color:var(--fg2);font-size:13px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:12px;padding:5px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--fg2);white-space:nowrap}
+.chip b{color:var(--fg);font-weight:600}
+section[role=tabpanel]{display:flex;flex-direction:column;gap:16px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g32{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}
+.g23{grid-template-columns:minmax(0,2fr) minmax(0,3fr)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;min-width:0}
+.panel h2{margin:0 0 2px;font-size:14.5px;font-weight:600}
+.panel .sub{margin:0 0 12px;color:var(--muted);font-size:12.5px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.kpi .l{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+.kpi .v{font-size:23px;font-weight:700;letter-spacing:-.01em}
+.kpi .d{font-size:12px;color:var(--fg2)}
+.up{color:var(--good-fg)} .down{color:var(--crit-fg)}
+.chart{width:100%;position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--font);fill:var(--muted);font-size:11px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--fg2);margin:0 0 8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:3px;border-radius:2px;display:inline-block}
+.legend i.dash{background:repeating-linear-gradient(90deg,currentColor 0 4px,transparent 4px 7px)!important;height:2px}
+.legend i.dot{width:9px;height:9px;border-radius:50%}
+#tip{position:fixed;pointer-events:none;z-index:50;background:var(--fg);color:var(--bg);font-size:12px;padding:7px 9px;border-radius:7px;max-width:260px;line-height:1.45;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.p-crit{background:var(--crit-bg);color:var(--crit-fg)} .p-warn{background:var(--warn-bg);color:var(--warn-fg)}
+.p-ok{background:var(--good-bg);color:var(--good-fg)} .p-over{background:var(--serious-bg);color:var(--serious-fg)}
+.tbl-wrap{overflow-x:auto;margin:0 -4px}
+table{width:100%;border-collapse:collapse;font-size:12.8px;font-variant-numeric:tabular-nums}
+th{text-align:left;font-weight:500;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--line2);white-space:nowrap}
+td.n,th.n{text-align:right}
+td.cat{max-width:150px;overflow:hidden;text-overflow:ellipsis}
+tr.sel td{background:var(--accent-soft)}
+tbody tr{cursor:default}
+.click tbody tr{cursor:pointer}
+.click tbody tr:hover td{background:var(--panel2)}
+.mono{font-family:var(--mono);font-size:12px}
+.feed{display:flex;flex-direction:column;gap:8px;max-height:372px;overflow:auto;padding-right:4px}
+.feed .it{display:grid;grid-template-columns:4px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 10px 9px 0;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}
+.feed .bar{align-self:stretch;border-radius:8px 0 0 8px}
+.feed .t{font-size:13px;font-weight:600}
+.feed .m{font-size:12px;color:var(--fg2);white-space:normal}
+.btn{all:unset;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--accent);padding:6px 10px;border-radius:7px;border:1px solid var(--line);background:var(--panel)}
+.btn:hover{background:var(--accent-soft)} .btn:focus-visible{outline:2px solid var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+select,input[type=number]{font:inherit;font-size:13px;padding:6px 9px;border-radius:7px;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--fg2);min-width:0}
+label.f output{font-weight:700;color:var(--fg);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px 22px}
+.cmp{display:grid;grid-template-columns:minmax(0,1.3fr) repeat(2,minmax(0,1fr));font-size:13px;font-variant-numeric:tabular-nums}
+.cmp div{padding:8px 6px;border-bottom:1px solid var(--line2)}
+.cmp .h{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.cmp .k{color:var(--fg2)} .cmp .v{text-align:right;font-weight:600}
+.gauge{margin-top:14px}
+.note{font-size:12px;color:var(--muted);margin:10px 0 0;line-height:1.55}
+.acts{display:flex;flex-direction:column;gap:6px;margin:10px 0 0;padding:0;list-style:none}
+.acts li{font-size:12.8px;padding:8px 10px;border-radius:8px;background:var(--panel2);border:1px solid var(--line)}
+.ccards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.cc{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;display:flex;flex-direction:column;gap:6px}
+.cc .h{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px}
+.cc .h i{width:10px;height:10px;border-radius:50%}
+.cc .n{font-size:22px;font-weight:700}
+.cc dl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin:0;font-size:12.5px;font-variant-numeric:tabular-nums}
+.cc dt{color:var(--fg2)} .cc dd{margin:0;text-align:right;font-weight:600}
+.cc p{margin:4px 0 0;font-size:12px;color:var(--fg2);line-height:1.5}
+.report{font-size:13.8px;line-height:1.7;max-width:78ch}
+.report h3{font-size:14px;margin:16px 0 4px}
+.report ul{margin:4px 0;padding-left:20px}
+.toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));right:max(20px,env(safe-area-inset-right,0px));background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:8px;font-size:13px;z-index:60}
+@media (max-width:980px){.g2,.g32,.g23{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:760px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  aside{position:static;height:auto;padding-block:14px;padding-right:max(16px,env(safe-area-inset-right,0px));gap:12px}
+  nav{flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:2px}
+  nav button{white-space:nowrap;padding:7px 9px}
+  .side-foot{display:none}
+  main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+}
+@media (prefers-reduced-motion:no-preference){.panel,.kpi{transition:border-color .15s}}
+</style>
+
+<div class="shell">
+  <aside>
+    <div class="side-in"><div class="brand"><b>Kho Vận DSS</b><span>Dự báo nhu cầu · Tối ưu tồn kho</span></div>
+    <nav role="tablist" aria-label="Phân hệ">
+      <button role="tab" id="t-tongquan" data-tab="tongquan"><i>01</i>Tổng quan & Cảnh báo</button>
+      <button role="tab" id="t-dubao" data-tab="dubao"><i>02</i>Dự báo & Nhập hàng</button>
+      <button role="tab" id="t-whatif" data-tab="whatif"><i>03</i>Mô phỏng What-If</button>
+      <button role="tab" id="t-ruiro" data-tab="ruiro"><i>04</i>Rủi ro giao hàng</button>
+      <button role="tab" id="t-seller" data-tab="seller"><i>05</i>Seller Intelligence</button>
+      <button role="tab" id="t-baocao" data-tab="baocao"><i>06</i>Báo cáo khuyến nghị</button>
+    </nav></div>
+    <div class="side-foot">Nhóm 10 · ĐH Văn Lang<br>Dữ liệu: Olist Brazilian E-Commerce, 01/2017 – 08/2018. Tồn kho hiện tại là số mô phỏng.</div>
+  </aside>
+  <main>
+    <div class="top">
+      <div><h1 id="ttl">Tổng quan & Cảnh báo</h1><p id="tsub"></p></div>
+      <div class="chips"><span class="chip">Kỳ lập kế hoạch: <b>tuần 20/08/2018</b></span><span class="chip">Mức phục vụ mặc định: <b>95%</b></span><span class="chip">Lead time: <b>1 tuần</b></span></div>
+    </div>
+
+    <section role="tabpanel" id="p-tongquan" aria-labelledby="t-tongquan">
+      <div class="kpis" id="kpis"></div>
+      <div class="grid g32">
+        <div class="panel"><h2>Nhu cầu theo tháng</h2><p class="sub">Số dòng sản phẩm của đơn đã giao (biến đại diện cho nhu cầu)</p><div class="chart" id="c-month"></div></div>
+        <div class="panel"><h2>Trung tâm cảnh báo</h2><p class="sub">Sắp theo mức độ nghiêm trọng; chọn "Xử lý" để mở phân hệ tương ứng</p><div class="feed" id="feed"></div></div>
+      </div>
+      <div class="grid g2">
+        <div class="panel"><h2>Tỷ lệ đơn giao trễ theo tháng</h2><p class="sub">Đơn có ngày giao thực tế sau ngày dự kiến (%)</p><div class="chart" id="c-late"></div></div>
+        <div class="panel"><h2>Điểm đánh giá theo mức độ giao sớm/trễ</h2><p class="sub">Trễ trên 3 ngày làm điểm review giảm mạnh</p><div class="chart" id="c-review"></div></div>
+      </div>
+    </section>
+
+    <section role="tabpanel" id="p-dubao" aria-labelledby="t-dubao" hidden>
+      <div class="panel">
+        <div class="row" style="justify-content:space-between">
+          <div><h2>Nhu cầu theo tuần: thực tế và dự báo</h2><p class="sub" style="margin:0">Tập kiểm thử bắt đầu tuần 07/05/2018 (đường chấm đứng)</p></div>
+          <label class="row" style="font-size:12.5px;color:var(--fg2)">Danh mục <select id="fc-cat"></select></label>
+        </div>
+        <div class="legend" style="margin-top:12px"><span><i style="background:var(--fg2)"></i>Thực tế</span><span><i style="background:var(--accent)"></i>Gradient Boosting</span><span style="color:var(--s2)"><i class="dash"></i><span style="color:var(--fg2)">Naive (tuần trước)</span></span></div>
+        <div class="chart" id="c-fc"></div>
+        <div class="row" id="fc-metrics" style="margin-top:10px"></div>
+      </div>
+      <div class="grid g32">
+        <div class="panel">
+          <div class="row" style="justify-content:space-between"><div><h2>Đề xuất nhập hàng tuần tới</h2><p class="sub" style="margin:0">Chọn một dòng để mở trong What-If</p></div><button class="btn" id="copy-po">Sao chép danh sách (CSV)</button></div>
+          <div class="tbl-wrap" style="margin-top:10px"><table class="click" id="tbl-reco"></table></div>
+        </div>
+        <div class="panel"><h2>So sánh mô hình dự báo</h2><p class="sub">WAPE trên tập kiểm thử 15 tuần × 20 danh mục (thấp hơn là tốt hơn)</p><div class="chart" id="c-models"></div>
+          <h2 style="margin-top:18px">Mô phỏng chính sách nhập hàng</h2><p class="sub">Cùng nhu cầu thực tế, ba cách quyết định lượng nhập</p><div class="tbl-wrap"><table id="tbl-pol"></table></div></div>
+      </div>
+    </section>
+
+    <section role="tabpanel" id="p-whatif" aria-labelledby="t-whatif" hidden>
+      <div class="panel">
+        <div class="row" style="justify-content:space-between;margin-bottom:14px"><div><h2>Thiết lập kịch bản</h2><p class="sub" style="margin:0">Thay đổi tham số và so sánh với phương án gốc của hệ thống</p></div><button class="btn" id="wi-reset">Khôi phục mặc định</button></div>
+        <div class="controls">
+          <label class="f">Danh mục<select id="wi-cat"></select></label>
+          <label class="f">Lead time nhà cung cấp: <output id="o-lt"></output><input type="range" id="wi-lt" min="0.5" max="4" step="0.5"></label>
+          <label class="f">Mức phục vụ mục tiêu<select id="wi-sl"><option value="0.90">90%</option><option value="0.95">95%</option><option value="0.975">97,5%</option><option value="0.99">99%</option></select></label>
+          <label class="f">Thay đổi nhu cầu giả định: <output id="o-dm"></output><input type="range" id="wi-dm" min="-30" max="50" step="5"></label>
+          <label class="f">Tồn kho hiện tại (đơn vị): <output id="o-st"></output><input type="range" id="wi-st" min="0" max="800" step="1"></label>
+        </div>
+      </div>
+      <div class="grid g2">
+        <div class="panel"><h2>Kết quả so sánh</h2><p class="sub" id="wi-sub"></p><div class="cmp" id="wi-cmp"></div></div>
+        <div class="panel"><h2>Vị trí tồn kho so với ngưỡng</h2><p class="sub">Thanh = tồn hiện tại; vạch = ROP và mức đặt hàng tối đa (S) của kịch bản</p><div class="chart gauge" id="c-gauge"></div><ul class="acts" id="wi-acts"></ul>
+          <p class="note">Công thức: SS = z·σ·√(L+R); ROP = ŷ·L + SS; S = ŷ·(L+R) + SS; lượng nhập Q = max(S − tồn, 0). R = 1 tuần (chu kỳ xem xét), σ = sai số dự báo của mô hình trên tập kiểm định.</p></div>
+      </div>
+    </section>
+
+    <section role="tabpanel" id="p-ruiro" aria-labelledby="t-ruiro" hidden>
+      <div class="kpis" id="r-kpis"></div>
+      <div class="grid g23">
+        <div class="panel"><h2>Đơn rủi ro cao gần đây</h2><p class="sub">Đơn tháng 7–8/2018 được chấm điểm khi đặt hàng</p><div class="tbl-wrap"><table class="click" id="tbl-risk"></table></div></div>
+        <div class="panel"><h2 id="r-title">Giải thích SHAP</h2><p class="sub" id="r-sub"></p><div class="chart" id="c-wf"></div><ul class="acts" id="r-acts"></ul></div>
+      </div>
+      <div class="grid g2">
+        <div class="panel"><h2>Yếu tố ảnh hưởng toàn cục</h2><p class="sub">Trung bình |SHAP| trên 150 đơn kiểm thử</p><div class="chart" id="c-glob"></div></div>
+        <div class="panel"><h2>Tỷ lệ giao trễ theo bang khách hàng</h2><p class="sub">Cam: trên 12%. Đường ngang: trung bình toàn sàn</p><div class="chart" id="c-state"></div></div>
+      </div>
+    </section>
+
+    <section role="tabpanel" id="p-seller" aria-labelledby="t-seller" hidden>
+      <div class="ccards" id="ccards"></div>
+      <div class="grid g2">
+        <div class="panel"><h2>Bản đồ phân cụm Seller (PCA)</h2><p class="sub">Mỗi điểm là một Seller có từ 20 đơn trở lên</p><div class="legend" id="sc-leg"></div><div class="chart" id="c-scatter"></div></div>
+        <div class="panel"><h2>Danh sách Seller cần theo dõi</h2><p class="sub">Thuộc cụm Chậm xử lý hoặc Hay hủy đơn, sắp theo tỷ lệ giao trễ</p><div class="tbl-wrap"><table id="tbl-watch"></table></div></div>
+      </div>
+    </section>
+
+    <section role="tabpanel" id="p-baocao" aria-labelledby="t-baocao" hidden>
+      <div class="panel">
+        <div class="row" style="justify-content:space-between"><div><h2>Báo cáo khuyến nghị tuần</h2><p class="sub" style="margin:0">Sinh tự động từ kết quả mô hình theo mẫu (rule-based). Trợ lý LLM là thành phần tuỳ chọn, chỉ nhận dữ liệu đã ẩn danh.</p></div><button class="btn primary" id="copy-rep">Sao chép báo cáo</button></div>
+        <div class="report" id="report"></div>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+const D = /*DATA*/null;
+const $ = s => document.querySelector(s);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const nf = (v, d = 0) => Number(v).toLocaleString("vi-VN", {minimumFractionDigits: d, maximumFractionDigits: d});
+const VN = c => D.vn[c] || String(c).replace(/_/g, " ");
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs = {}, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+const tip = $("#tip");
+function showTip(ev, html) { tip.innerHTML = html; tip.hidden = false; const w = tip.offsetWidth, h = tip.offsetHeight; let x = ev.clientX + 14, y = ev.clientY + 14; if (x + w > innerWidth - 8) x = ev.clientX - w - 14; if (y + h > innerHeight - 8) y = ev.clientY - h - 14; tip.style.left = x + "px"; tip.style.top = y + "px"; }
+function hideTip() { tip.hidden = true; }
+function niceMax(v) { const p = Math.pow(10, Math.floor(Math.log10(v || 1))); for (const m of [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (m * p >= v) return m * p; return 10 * p; }
+function ticks(max, n = 4) { return Array.from({length: n + 1}, (_, i) => max * i / n); }
+const kfmt = v => v >= 1e6 ? nf(v / 1e6, 1) + " tr" : v >= 1000 ? nf(v / 1000, v >= 10000 ? 0 : 1) + "k" : nf(v);
+
+/* ---------- chart primitives ---------- */
+function frame(host, H, pad) {
+  host.innerHTML = ""; const W = Math.max(280, host.clientWidth || 600);
+  const svg = el("svg", {viewBox: `0 0 ${W} ${H}`, role: "img"}, host);
+  return {svg, W, H, x0: pad.l, x1: W - pad.r, y0: pad.t, y1: H - pad.b};
+}
+function yAxis(f, max, fmt, n = 4) {
+  for (const t of ticks(max, n)) { const y = f.y1 - (t / max) * (f.y1 - f.y0);
+    el("line", {x1: f.x0, x2: f.x1, y1: y, y2: y, stroke: css("--line2"), "stroke-width": 1}, f.svg);
+    const tx = el("text", {x: f.x0 - 8, y: y + 4, "text-anchor": "end"}, f.svg); tx.textContent = fmt(t); }
+  el("line", {x1: f.x0, x2: f.x1, y1: f.y1, y2: f.y1, stroke: css("--line"), "stroke-width": 1}, f.svg);
+}
+function barChart(host, o) {
+  const f = frame(host, o.h || 250, {l: 44, r: 8, t: 14, b: 36}); const n = o.values.length;
+  const max = o.max || niceMax(Math.max(...o.values) * 1.05); yAxis(f, max, o.yfmt || kfmt, o.n || 4);
+  const step = (f.x1 - f.x0) / n, bw = Math.min(34, step * 0.7);
+  o.values.forEach((v, i) => {
+    const x = f.x0 + step * i + (step - bw) / 2, y = f.y1 - v / max * (f.y1 - f.y0), h = f.y1 - y;
+    const col = o.colors ? o.colors[i] : css("--accent");
+    const r = Math.min(4, bw / 2, h);
+    el("path", {d: `M${x},${f.y1} V${y + r} Q${x},${y} ${x + r},${y} H${x + bw - r} Q${x + bw},${y} ${x + bw},${y + r} V${f.y1} Z`, fill: col}, f.svg);
+    const hit = el("rect", {x: f.x0 + step * i, y: f.y0, width: step, height: f.y1 - f.y0, fill: "transparent"}, f.svg);
+    hit.addEventListener("mousemove", e => showTip(e, o.tip(i))); hit.addEventListener("mouseleave", hideTip);
+    if (i % (o.every || 1) === 0) { const t = el("text", {x: x + bw / 2, y: f.y1 + 16, "text-anchor": "middle"}, f.svg); t.textContent = o.labels[i]; }
+    if (o.valueLabels && o.valueLabels.includes(i)) { const t = el("text", {x: x + bw / 2, y: y - 5, "text-anchor": "middle", style: `fill:${css("--fg2")};font-weight:600`}, f.svg); t.textContent = o.vfmt(v); }
+  });
+}
+function lineChart(host, o) {
+  const f = frame(host, o.h || 250, {l: 44, r: 12, t: 14, b: 36}); const n = o.labels.length;
+  const all = o.series.flatMap(s => s.values.filter(v => v != null));
+  const max = o.max || niceMax(Math.max(...all) * 1.08); yAxis(f, max, o.yfmt || kfmt, o.n || 4);
+  const X = i => f.x0 + (n === 1 ? 0 : i * (f.x1 - f.x0) / (n - 1)), Y = v => f.y1 - v / max * (f.y1 - f.y0);
+  if (o.vline != null) { el("line", {x1: X(o.vline), x2: X(o.vline), y1: f.y0, y2: f.y1, stroke: css("--muted"), "stroke-dasharray": "2 4"}, f.svg); }
+  o.labels.forEach((l, i) => { if (i % (o.every || 1) === 0) { const t = el("text", {x: X(i), y: f.y1 + 16, "text-anchor": "middle"}, f.svg); t.textContent = l; } });
+  for (const s of o.series) {
+    let d = ""; s.values.forEach((v, i) => { if (v == null) return; d += (d && s.values[i - 1] != null ? "L" : "M") + X(i) + "," + Y(v); });
+    el("path", {d, fill: "none", stroke: s.color, "stroke-width": s.w || 2, "stroke-dasharray": s.dash || "", "stroke-linejoin": "round", "stroke-linecap": "round"}, f.svg);
+    if (s.markers) s.values.forEach((v, i) => { if (v != null) el("circle", {cx: X(i), cy: Y(v), r: 3, fill: s.color, stroke: css("--panel"), "stroke-width": 1.5}, f.svg); });
+    if (s.endLabel) { let i = s.values.length - 1; while (s.values[i] == null) i--; el("circle", {cx: X(i), cy: Y(s.values[i]), r: 4.5, fill: s.color, stroke: css("--panel"), "stroke-width": 2}, f.svg); const t = el("text", {x: X(i) - 6, y: Y(s.values[i]) - 14, "text-anchor": "end", style: `fill:${css("--fg")};font-weight:600`}, f.svg); t.textContent = s.endLabel; }
+  }
+  const cross = el("line", {y1: f.y0, y2: f.y1, stroke: css("--muted"), "stroke-width": 1, opacity: 0}, f.svg);
+  const hit = el("rect", {x: f.x0, y: f.y0, width: f.x1 - f.x0, height: f.y1 - f.y0, fill: "transparent"}, f.svg);
+  hit.addEventListener("mousemove", e => { const r = f.svg.getBoundingClientRect(); const px = (e.clientX - r.left) * f.W / r.width; const i = Math.max(0, Math.min(n - 1, Math.round((px - f.x0) / ((f.x1 - f.x0) / (n - 1)))));
+    cross.setAttribute("x1", X(i)); cross.setAttribute("x2", X(i)); cross.setAttribute("opacity", 0.6);
+    showTip(e, `<b>${o.labels[i]}</b><br>` + o.series.filter(s => s.values[i] != null).map(s => `${s.name}: <b>${o.tfmt ? o.tfmt(s.values[i]) : nf(s.values[i], 1)}</b>`).join("<br>")); });
+  hit.addEventListener("mouseleave", () => { cross.setAttribute("opacity", 0); hideTip(); });
+}
+function hbar(host, o) {
+  const rh = o.rh || 26, H = o.labels.length * rh + 22, lw = o.lw || 170;
+  const f = frame(host, H, {l: lw, r: 56, t: 4, b: 18}); const max = o.max || niceMax(Math.max(...o.values));
+  o.labels.forEach((l, i) => { const y = f.y0 + i * rh, w = Math.max(1, (o.values[i] - (o.min || 0)) / (max - (o.min || 0)) * (f.x1 - f.x0));
+    const t = el("text", {x: f.x0 - 8, y: y + rh / 2 + 4, "text-anchor": "end", style: `fill:${css("--fg2")}`}, f.svg); t.textContent = l;
+    const r = Math.min(4, (rh - 10) / 2);
+    el("path", {d: `M${f.x0},${y + 5} H${f.x0 + w - r} Q${f.x0 + w},${y + 5} ${f.x0 + w},${y + 5 + r} V${y + rh - 5 - r} Q${f.x0 + w},${y + rh - 5} ${f.x0 + w - r},${y + rh - 5} H${f.x0} Z`, fill: o.colors ? o.colors[i] : css("--accent")}, f.svg);
+    const v = el("text", {x: f.x0 + w + 6, y: y + rh / 2 + 4, style: `fill:${css("--fg")};font-weight:600`}, f.svg); v.textContent = o.fmt(o.values[i]);
+  });
+}
+
+/* ---------- state & tabs ---------- */
+const TITLES = {tongquan: ["Tổng quan & Cảnh báo", "Bức tranh nhu cầu, tồn kho và vận hành trên toàn sàn"], dubao: ["Dự báo & Nhập hàng", "Dự báo nhu cầu theo danh mục và lượng nhập đề xuất cho tuần tới"], whatif: ["Mô phỏng What-If", "Thử thay đổi lead time, mức phục vụ, nhu cầu và tồn kho trước khi chốt"], ruiro: ["Rủi ro giao hàng", "Chấm điểm nguy cơ giao trễ ngay khi đặt hàng, kèm giải thích"], seller: ["Seller Intelligence", "Phân cụm nhà bán hàng theo hiệu suất vận hành"], baocao: ["Báo cáo khuyến nghị", "Tóm tắt tuần cho nhà quản trị"]};
+let cur = "tongquan";
+const rendered = {};
+function go(tab) {
+  if (!TITLES[tab]) tab = "tongquan"; cur = tab;
+  document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
+  document.querySelectorAll("section[role=tabpanel]").forEach(s => s.hidden = s.id !== "p-" + tab);
+  $("#ttl").textContent = TITLES[tab][0]; $("#tsub").textContent = TITLES[tab][1];
+  try { history.replaceState(null, "", "#" + tab); } catch (e) {}
+  render(tab);
+}
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => go(b.dataset.tab)));
+function render(tab) { ({tongquan: rOverview, dubao: rForecast, whatif: rWhatIf, ruiro: rRisk, seller: rSeller, baocao: rReport})[tab](); }
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => render(cur), 150); });
+new MutationObserver(() => render(cur)).observe(document.documentElement, {attributes: true, attributeFilter: ["data-theme"]});
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => render(cur));
+
+/* ---------- inventory logic ---------- */
+const Z = {"0.90": 1.2816, "0.95": 1.6449, "0.975": 1.96, "0.99": 2.3263};
+function plan(r, p) { // p: {L, z, dm, stock}
+  const yhat = r.forecast_week * (1 + p.dm / 100), R = 1;
+  const ss = p.z * r.sigma * Math.sqrt(p.L + R), rop = yhat * p.L + ss, S = yhat * (p.L + R) + ss;
+  const q = Math.max(S - p.stock, 0);
+  let st; if (p.stock < yhat * p.L) st = "crit"; else if (p.stock < rop) st = "warn"; else if (p.stock > 1.3 * S) st = "over"; else st = "ok";
+  return {yhat, ss, rop, S, q, st, cover: p.stock / Math.max(yhat, 0.1), capital: q * r.avg_price};
+}
+const ST = {crit: ["p-crit", "Nguy cơ hết hàng", "Hết hàng"], warn: ["p-warn", "Dưới điểm đặt hàng", "Dưới ROP"], ok: ["p-ok", "An toàn", "An toàn"], over: ["p-over", "Tồn dư", "Tồn dư"]};
+const pillS = s => `<span class="pill ${ST[s][0]}" title="${ST[s][1]}">${ST[s][2]}</span>`;
+const pill = s => `<span class="pill ${ST[s][0]}">${ST[s][1]}</span>`;
+const SEV = {crit: 0, warn: 1, over: 2, ok: 3};
+const base = r => plan(r, {L: 1, z: D.z, dm: 0, stock: r.on_hand_sim});
+const recos = () => D.reco.map(r => ({r, p: base(r)})).sort((a, b) => SEV[a.p.st] - SEV[b.p.st] || b.p.q - a.p.q);
+
+/* ---------- 01 overview ---------- */
+function rOverview() {
+  const m = D.monthly, n = m.ym.length;
+  const totOrders = m.orders.reduce((a, b) => a + b, 0), gmv = m.value.reduce((a, b) => a + b, 0);
+  const last = m.demand[n - 1], prev = m.demand[n - 2], mom = (last - prev) / prev * 100;
+  const rs = recos(); const nCrit = rs.filter(x => x.p.st === "crit").length, nWarn = rs.filter(x => x.p.st === "warn").length;
+  const watch = D.sellers.filter(s => s.c === 0 || s.c === 2).length;
+  const late18 = m.late.slice(12), avgLate = late18.reduce((a, b) => a + b, 0) / late18.length;
+  $("#kpis").innerHTML = [
+    ["Đơn đã giao (20 tháng)", nf(totOrders), "01/2017 – 08/2018"],
+    ["Giá trị giao dịch", nf(gmv / 1e6, 2) + " tr BRL", "giá + phí vận chuyển"],
+    ["Nhu cầu tháng 08/2018", nf(last), `<span class="${mom >= 0 ? "up" : "down"}">${mom >= 0 ? "▲" : "▼"} ${nf(Math.abs(mom), 1)}%</span> so với tháng trước`],
+    ["Cảnh báo tồn kho", `${nCrit + nWarn} / ${D.reco.length}`, `${nCrit} nguy cơ hết hàng · ${nWarn} dưới ROP`],
+    ["Tỷ lệ giao trễ 2018", nf(avgLate, 1) + "%", "trung bình 8 tháng đầu 2018"],
+    ["Seller cần theo dõi", nf(watch), `trên ${nf(D.sellers.length)} Seller được phân cụm`],
+  ].map(([l, v, d]) => `<div class="kpi"><span class="l">${l}</span><span class="v">${v}</span><span class="d">${d}</span></div>`).join("");
+  const imax = m.demand.indexOf(Math.max(...m.demand));
+  barChart($("#c-month"), {h: 320, values: m.demand, labels: m.ym.map(s => s.slice(5) + "/" + s.slice(2, 4)), every: 2, valueLabels: [imax, n - 1], vfmt: v => nf(v),
+    tip: i => `<b>Tháng ${m.ym[i]}</b><br>Nhu cầu: <b>${nf(m.demand[i])}</b> dòng SP<br>Đơn: ${nf(m.orders[i])}<br>Giá trị: ${nf(m.value[i] / 1e6, 2)} tr BRL`});
+  lineChart($("#c-late"), {max: 25, n: 5, labels: m.ym.map(s => s.slice(5) + "/" + s.slice(2, 4)), every: 2, yfmt: v => nf(v) + "%", tfmt: v => nf(v, 1) + "%", h: 230,
+    series: [{name: "Tỷ lệ trễ", values: m.late, color: css("--s2"), markers: true, endLabel: nf(m.late[n - 1], 1) + "%"}]});
+  const rv = D.review; const cols = rv.b.map(b => b.startsWith("Sớm") ? css("--good") : css("--crit"));
+  barChart($("#c-review"), {max: 5, n: 5, values: rv.avg, labels: rv.b, colors: cols, h: 230, yfmt: v => nf(v, 1), valueLabels: rv.avg.map((_, i) => i), vfmt: v => nf(v, 2),
+    tip: i => `<b>${rv.b[i]}</b><br>Điểm TB: <b>${nf(rv.avg[i], 2)}</b><br>Review 1–2 sao: ${nf(rv.low[i], 1)}%`});
+  // feed
+  const items = [];
+  rs.filter(x => x.p.st === "crit" || x.p.st === "warn").forEach(({r, p}) => items.push({sev: p.st, t: `${VN(r.category)}: ${ST[p.st][1].toLowerCase()}`, m: `Tồn ${nf(r.on_hand_sim)} · ROP ${nf(p.rop)} · đề xuất nhập ${nf(p.q)} đv`, go: () => { wiCat = r.category; wiInit(); go("whatif"); }}));
+  D.risk.orders.slice(0, 4).forEach(o => items.push({sev: o.risk > 0.83 ? "crit" : "warn", t: `Đơn ${o.id}… rủi ro trễ ${nf(o.risk * 100, 1)}%`, m: `${o.cat} · ${o.sstate} → ${o.cstate}`, go: () => { riskSel = o.id; go("ruiro"); }}));
+  D.sellers.filter(s => s.c === 2).sort((a, b) => b.canc - a.canc).slice(0, 2).forEach(s => items.push({sev: "warn", t: `Seller ${s.id}… tỷ lệ hủy ${nf(s.canc * 100, 1)}%`, m: `Cụm Hay hủy đơn · ${nf(s.n)} đơn · review ${nf(s.review, 2)}`, go: () => go("seller")}));
+  items.sort((a, b) => SEV[a.sev] - SEV[b.sev]);
+  const bc = {crit: css("--crit"), warn: css("--warn"), over: css("--serious"), ok: css("--good")};
+  const feed = $("#feed"); feed.innerHTML = "";
+  items.forEach(it => { const d = document.createElement("div"); d.className = "it";
+    d.innerHTML = `<span class="bar" style="background:${bc[it.sev]}"></span><div><div class="t">${it.t}</div><div class="m">${it.m}</div></div><button class="btn">Xử lý</button>`;
+    d.querySelector("button").addEventListener("click", it.go); feed.appendChild(d); });
+}
+
+/* ---------- 02 forecast ---------- */
+let fcCat = null;
+function rForecast() {
+  const sel = $("#fc-cat"); if (!sel.options.length) { sel.innerHTML = D.top.map(c => `<option value="${c}">${VN(c)}</option>`).join(""); sel.addEventListener("change", () => { fcCat = sel.value; rForecast(); }); }
+  fcCat = fcCat || D.top[0]; sel.value = fcCat;
+  const s = D.series[fcCat]; const start = s.weeks.indexOf("2017-10-02") >= 0 ? s.weeks.indexOf("2017-10-02") : 0;
+  const weeks = s.weeks.slice(start), dem = s.demand.slice(start);
+  const gb = weeks.map(w => { const k = s.tweeks.indexOf(w); return k >= 0 ? s.gb[k] : null; });
+  const nv = weeks.map(w => { const k = s.tweeks.indexOf(w); return k >= 0 ? s.naive[k] : null; });
+  const r = D.reco.find(x => x.category === fcCat);
+  const labels = weeks.map(w => w.slice(8, 10) + "/" + w.slice(5, 7));
+  labels.push("27/08"); gb.push(r.forecast_week); dem.push(null); nv.push(null);
+  lineChart($("#c-fc"), {labels, every: 4, h: 280, vline: weeks.indexOf(s.tweeks[0]), tfmt: v => nf(v, 0),
+    series: [{name: "Thực tế", values: dem, color: css("--fg2"), w: 1.8}, {name: "Naive", values: nv, color: css("--s2"), dash: "5 4", w: 1.6}, {name: "Gradient Boosting", values: gb, color: css("--accent"), markers: true, endLabel: "Tuần tới: " + nf(r.forecast_week, 0)}]});
+  let ae = 0, an = 0, sd = 0; s.tweeks.forEach((w, k) => { const a = s.demand[s.weeks.indexOf(w)]; ae += Math.abs(a - s.gb[k]); an += Math.abs(a - s.naive[k]); sd += a; });
+  $("#fc-metrics").innerHTML = `<span class="chip">WAPE Gradient Boosting: <b>${nf(ae / sd * 100, 1)}%</b></span><span class="chip">WAPE Naive: <b>${nf(an / sd * 100, 1)}%</b></span><span class="chip">Dự báo 4 tuần tới: <b>${nf(r.forecast_4w)} đv</b></span><span class="chip">σ sai số: <b>${nf(r.sigma, 1)}</b></span>`;
+  const rs = recos();
+  const t = $("#tbl-reco");
+  t.innerHTML = `<thead><tr><th>Danh mục</th><th class="n">Dự báo</th><th class="n">Tồn</th><th class="n">SS</th><th class="n">ROP</th><th class="n">Nhập</th><th>Trạng thái</th></tr></thead><tbody>` +
+    rs.map(({r, p}) => `<tr data-c="${r.category}" class="${r.category === fcCat ? "sel" : ""}"><td>${VN(r.category)}</td><td class="n">${nf(p.yhat)}</td><td class="n">${nf(r.on_hand_sim)}</td><td class="n">${nf(p.ss)}</td><td class="n">${nf(p.rop)}</td><td class="n"><b>${nf(p.q)}</b></td><td>${pillS(p.st)}</td></tr>`).join("") + "</tbody>";
+  t.querySelectorAll("tbody tr").forEach(tr => tr.addEventListener("click", () => { wiCat = tr.dataset.c; wiInit(); go("whatif"); }));
+  const mm = D.fc_metrics, names = Object.keys(mm);
+  hbar($("#c-models"), {labels: names, values: names.map(n => mm[n].WAPE), fmt: v => nf(v, 2) + "%", lw: 170, min: 20, max: 28,
+    colors: names.map(n => n.startsWith("Gradient") ? css("--accent") : css("--line"))});
+  const pol = D.policy, pn = Object.keys(pol);
+  $("#tbl-pol").innerHTML = `<thead><tr><th>Chính sách</th><th class="n">Thiếu hàng</th><th class="n">Tuần thiếu</th><th class="n">Tồn TB</th></tr></thead><tbody>` +
+    pn.map(n => `<tr><td style="white-space:normal">${n}</td><td class="n">${nf(100 - pol[n].fill_rate, 2)}%</td><td class="n">${pol[n].stockout_weeks}</td><td class="n">${nf(pol[n].avg_end_inv)}</td></tr>`).join("") + "</tbody>";
+}
+$("#copy-po").addEventListener("click", () => {
+  const rows = [["danh_muc", "du_bao_tuan", "ton_hien_tai", "safety_stock", "rop", "nhap_de_xuat", "trang_thai"]].concat(recos().map(({r, p}) => [VN(r.category), Math.round(p.yhat), r.on_hand_sim, Math.round(p.ss), Math.round(p.rop), Math.round(p.q), ST[p.st][1]]));
+  copy(rows.map(r => r.join(",")).join("\n"), "Đã sao chép danh sách nhập hàng");
+});
+
+/* ---------- 03 what-if ---------- */
+let wiCat = null;
+function wiInit() { const r = D.reco.find(x => x.category === (wiCat || D.reco[0].category)); wiCat = r.category;
+  $("#wi-lt").value = 1; $("#wi-sl").value = "0.95"; $("#wi-dm").value = 0; const st = $("#wi-st"); st.max = Math.ceil(r.order_up_to * 2.2); st.value = r.on_hand_sim; }
+function rWhatIf() {
+  const sel = $("#wi-cat");
+  if (!sel.options.length) { sel.innerHTML = D.top.map(c => `<option value="${c}">${VN(c)}</option>`).join("");
+    sel.addEventListener("change", () => { wiCat = sel.value; wiInit(); rWhatIf(); });
+    ["#wi-lt", "#wi-sl", "#wi-dm", "#wi-st"].forEach(id => $(id).addEventListener("input", rWhatIf));
+    $("#wi-reset").addEventListener("click", () => { wiInit(); rWhatIf(); }); if (!wiCat) wiInit(); }
+  sel.value = wiCat; const r = D.reco.find(x => x.category === wiCat);
+  const p = {L: +$("#wi-lt").value, z: Z[$("#wi-sl").value], dm: +$("#wi-dm").value, stock: +$("#wi-st").value};
+  $("#o-lt").textContent = nf(p.L, 1) + " tuần"; $("#o-dm").textContent = (p.dm > 0 ? "+" : "") + p.dm + "%"; $("#o-st").textContent = nf(p.stock);
+  const b = base(r), s = plan(r, p);
+  $("#wi-sub").textContent = `${VN(r.category)} · giá bán TB ${nf(r.avg_price, 2)} BRL · σ = ${nf(r.sigma, 1)} đv/tuần`;
+  const rows = [["Nhu cầu dự báo / tuần", b.yhat, s.yhat, 0], ["Tồn kho hiện tại", r.on_hand_sim, p.stock, 0], ["Safety Stock", b.ss, s.ss, 0], ["Điểm đặt hàng lại (ROP)", b.rop, s.rop, 0], ["Mức tồn tối đa (S)", b.S, s.S, 0], ["Lượng nhập đề xuất", b.q, s.q, 0], ["Số tuần đủ bán", b.cover, s.cover, 1], ["Vốn cho lô nhập (BRL)", b.capital, s.capital, 0]];
+  $("#wi-cmp").innerHTML = `<div class="h">Chỉ tiêu</div><div class="h v">Phương án gốc</div><div class="h v">Kịch bản</div>` +
+    rows.map(([k, a, c, d]) => `<div class="k">${k}</div><div class="v">${nf(a, d)}</div><div class="v" style="color:${Math.abs(c - a) > 0.5 ? css("--accent") : "inherit"}">${nf(c, d)}</div>`).join("") +
+    `<div class="k">Trạng thái</div><div class="v">${pill(b.st)}</div><div class="v">${pill(s.st)}</div>`;
+  // gauge
+  const host = $("#c-gauge"); const f = frame(host, 96, {l: 8, r: 8, t: 26, b: 26});
+  const max = Math.max(s.S * 1.45, p.stock * 1.05, 10); const X = v => f.x0 + v / max * (f.x1 - f.x0);
+  const zones = [[0, s.yhat * p.L, css("--crit-bg")], [s.yhat * p.L, s.rop, css("--warn-bg")], [s.rop, 1.3 * s.S, css("--good-bg")], [1.3 * s.S, max, css("--serious-bg")]];
+  zones.forEach(([a, c, col]) => el("rect", {x: X(a), y: f.y0, width: Math.max(0, X(Math.min(c, max)) - X(a)), height: 30, fill: col}, f.svg));
+  el("rect", {x: X(0), y: f.y0 + 9, width: Math.max(2, X(p.stock) - X(0)), height: 12, rx: 3, fill: css("--accent")}, f.svg);
+  [[s.rop, "ROP " + nf(s.rop)], [s.S, "S " + nf(s.S)]].forEach(([v, l], i) => { el("line", {x1: X(v), x2: X(v), y1: f.y0 - 4, y2: f.y0 + 34, stroke: css("--fg"), "stroke-width": 1.5}, f.svg);
+    const t = el("text", {x: X(v), y: i ? f.y0 + 48 : f.y0 - 9, "text-anchor": "middle", style: `fill:${css("--fg")};font-weight:600`}, f.svg); t.textContent = l; });
+  const tt = el("text", {x: X(0), y: f.y0 + 48, style: `fill:${css("--fg2")}`}, f.svg); tt.textContent = "Tồn: " + nf(p.stock);
+  const acts = [];
+  if (s.st === "crit") acts.push(`Đặt gấp ${nf(s.q)} đv; tồn hiện tại không đủ bán trong ${nf(p.L, 1)} tuần chờ hàng về. Cân nhắc nhà cung cấp có lead time ngắn hơn.`);
+  if (s.st === "warn") acts.push(`Tồn đã xuống dưới ROP: lập đơn nhập ${nf(s.q)} đv trong tuần này.`);
+  if (s.st === "ok") acts.push(s.q > 0 ? `Tồn an toàn. Có thể nhập bổ sung ${nf(s.q)} đv theo chu kỳ để giữ mức S.` : "Tồn an toàn, chưa cần nhập trong chu kỳ này.");
+  if (s.st === "over") acts.push(`Tồn vượt 130% mức S: hoãn nhập, xem xét khuyến mãi để giải phóng ${nf(p.stock - s.S)} đv.`);
+  if (p.L > 1) acts.push(`Riêng việc lead time tăng lên ${nf(p.L, 1)} tuần đã làm Safety Stock tăng ${nf((Math.sqrt((p.L + 1) / 2) - 1) * 100)}% so với lead time 1 tuần.`);
+  if (+$("#wi-sl").value >= 0.99) acts.push("Mức phục vụ 99% đòi hỏi tồn an toàn cao hơn 41% so với 95%; chỉ nên áp dụng cho danh mục chủ lực.");
+  $("#wi-acts").innerHTML = acts.map(a => `<li>${a}</li>`).join("");
+}
+
+/* ---------- 04 risk ---------- */
+let riskSel = null;
+function rRisk() {
+  const M = D.risk.metrics["Gradient Boosting (HistGB)"], L = D.risk.metrics["Logistic Regression"];
+  $("#r-kpis").innerHTML = [["AUC-ROC (Gradient Boosting)", nf(M.AUC, 3), `Logistic: ${nf(L.AUC, 3)}`], ["Recall ở ngưỡng 0,5", nf(M.Recall * 100, 1) + "%", `Precision ${nf(M.Precision * 100, 1)}%`],
+    ["Kiểm tra 20% đơn rủi ro nhất", nf(D.risk.lift["top20%"], 1) + "%", "đơn trễ được phát hiện (ngẫu nhiên: 20%)"], ["Tỷ lệ trễ tập kiểm thử", nf(D.risk.late_rate_test * 100, 1) + "%", nf(D.risk.n_test) + " đơn 01–08/2018"]]
+    .map(([l, v, d]) => `<div class="kpi"><span class="l">${l}</span><span class="v">${v}</span><span class="d">${d}</span></div>`).join("");
+  const os = D.risk.orders; riskSel = riskSel || os[0].id;
+  const t = $("#tbl-risk");
+  t.innerHTML = `<thead><tr><th>Mã đơn</th><th>Ngày</th><th>Tuyến</th><th>Danh mục</th><th class="n">Rủi ro</th></tr></thead><tbody>` +
+    os.map(o => `<tr data-id="${o.id}" class="${o.id === riskSel ? "sel" : ""}"><td class="mono">${o.id}…</td><td>${o.date.slice(8)}/${o.date.slice(5, 7)}</td><td>${o.sstate} → ${o.cstate}</td><td class="cat">${o.cat}</td><td class="n"><span class="pill ${o.risk >= 0.8 ? "p-crit" : o.risk >= 0.7 ? "p-warn" : "p-ok"}">${nf(o.risk * 100, 1)}%</span></td></tr>`).join("") + "</tbody>";
+  t.querySelectorAll("tbody tr").forEach(tr => tr.addEventListener("click", () => { riskSel = tr.dataset.id; rRisk(); }));
+  const o = os.find(x => x.id === riskSel), labs = D.risk.labels;
+  $("#r-title").textContent = `Giải thích SHAP — đơn ${o.id}…`;
+  const pb = 1 / (1 + Math.exp(-o.base)), pf = 1 / (1 + Math.exp(-(o.base + o.phi.reduce((a, b) => a + b, 0))));
+  $("#r-sub").textContent = `Xác suất trễ nền ${nf(pb * 100, 1)}% → ${nf(pf * 100, 1)}% cho đơn này. Thực tế: ${o.late ? "giao trễ " + nf(o.delay, 1) + " ngày" : "giao đúng hạn (sớm " + nf(-o.delay, 1) + " ngày)"}.`;
+  const ord = o.phi.map((v, i) => i).sort((a, b) => Math.abs(o.phi[b]) - Math.abs(o.phi[a])).slice(0, 8);
+  const fmtx = (i, v) => i === 5 ? (v ? "Có" : "Không") : i === 9 ? ["T2", "T3", "T4", "T5", "T6", "T7", "CN"][v] : Math.abs(v) >= 10 ? nf(v) : nf(v, 2);
+  const host = $("#c-wf"); const rh = 30, f = frame(host, ord.length * rh + 30, {l: 250, r: 50, t: 4, b: 24});
+  let c = o.base, lo = o.base, hi = o.base; ord.forEach(i => { c += o.phi[i]; lo = Math.min(lo, c); hi = Math.max(hi, c); });
+  const pad = (hi - lo) * 0.12 + 0.05; lo -= pad; hi += pad; const X = v => f.x0 + (v - lo) / (hi - lo) * (f.x1 - f.x0);
+  el("line", {x1: X(o.base), x2: X(o.base), y1: f.y0, y2: f.y1, stroke: css("--muted"), "stroke-dasharray": "3 3"}, f.svg);
+  const bt = el("text", {x: X(o.base), y: f.y1 + 16, "text-anchor": "middle"}, f.svg); bt.textContent = "nền " + nf(pb * 100, 0) + "%";
+  c = o.base;
+  ord.forEach((i, k) => { const v = o.phi[i], y = f.y0 + k * rh, a = X(c), b2 = X(c + v); const col = v > 0 ? css("--s4") : css("--accent");
+    el("rect", {x: Math.min(a, b2), y: y + 6, width: Math.max(2, Math.abs(b2 - a)), height: rh - 12, rx: 3, fill: col}, f.svg);
+    const lt = el("text", {x: f.x0 - 10, y: y + rh / 2 + 4, "text-anchor": "end", style: `fill:${css("--fg2")}`}, f.svg); lt.textContent = `${labs[i]} = ${fmtx(i, o.x[i])}`;
+    const vt = el("text", {x: v > 0 ? Math.max(a, b2) + 5 : Math.min(a, b2) - 5, y: y + rh / 2 + 4, "text-anchor": v > 0 ? "start" : "end", style: `fill:${css("--fg")};font-weight:600`}, f.svg); vt.textContent = (v > 0 ? "+" : "") + nf(v, 2);
+    c += v; });
+  const acts = []; const x = o.x;
+  if (x[8] > 0.12) acts.push(`Bang nhận hàng ${o.cstate} có tỷ lệ trễ lịch sử ${nf(x[8] * 100, 0)}%: ưu tiên đơn vị vận chuyển có tuyến riêng hoặc cộng thêm ngày vào thời hạn hứa giao.`);
+  if (x[1] > 1000) acts.push(`Khoảng cách ${nf(x[1])} km: gợi ý kho trung chuyển gần khách hoặc chọn Seller cùng vùng nếu còn hàng.`);
+  if (x[7] < 3) acts.push(`Seller chỉ có ${nf(x[7], 1)} ngày để bàn giao cho ĐVVC: nhắc Seller xử lý trong ngày.`);
+  if (x[0] < 15) acts.push(`Thời hạn hứa giao chỉ ${nf(x[0], 0)} ngày: xem lại cách tính ngày giao dự kiến cho tuyến này.`);
+  acts.push(o.risk >= 0.8 ? "Mức rủi ro cao: đưa vào danh sách chăm sóc chủ động, gửi thông báo tiến độ cho khách." : "Mức rủi ro trung bình: theo dõi trạng thái bàn giao.");
+  $("#r-acts").innerHTML = acts.map(a => `<li>${a}</li>`).join("");
+  const g = D.risk.global, gi = g.map((v, i) => i).sort((a, b) => g[b] - g[a]);
+  hbar($("#c-glob"), {labels: gi.map(i => labs[i]), values: gi.map(i => g[i]), fmt: v => nf(v, 3), lw: 230, rh: 24});
+  const sd = D.state; const avg = 8.1;
+  const host2 = $("#c-state");
+  barChart(host2, {max: 25, n: 5, values: sd.rate, labels: sd.s, colors: sd.rate.map(v => v > 12 ? css("--s2") : css("--accent")), h: 250, yfmt: v => nf(v) + "%",
+    tip: i => `<b>${sd.s[i]}</b><br>Tỷ lệ trễ: <b>${nf(sd.rate[i], 1)}%</b><br>${nf(sd.n[i])} đơn`});
+  const svg = host2.querySelector("svg"), vb = svg.viewBox.baseVal, max = 25, y = (vb.height - 36) - avg / max * (vb.height - 36 - 14);
+  el("line", {x1: 44, x2: vb.width - 8, y1: y, y2: y, stroke: css("--fg2"), "stroke-dasharray": "4 4"}, svg);
+}
+
+/* ---------- 05 seller ---------- */
+const CC = {1: "--accent", 3: "--s3", 0: "--s2", 2: "--s4"};
+const CPOL = {1: "Ưu tiên hiển thị, đàm phán tăng sản lượng; theo dõi phí vận chuyển.", 3: "Giữ quan hệ, mở rộng danh mục giá trị cao; ứng viên chương trình Seller uy tín.", 0: "Cảnh báo thời gian chuẩn bị hàng, đặt mục tiêu bàn giao ≤ 2 ngày, giảm ưu tiên khi tồn khan hiếm.", 2: "Rà soát tồn kho đăng bán, yêu cầu cập nhật hàng còn/hết; tạm hạn chế nếu hủy > 5%."};
+function rSeller() {
+  const P = D.profile, order = [1, 3, 0, 2];
+  $("#ccards").innerHTML = order.map(c => { const p = P.find(x => x.cluster === c);
+    return `<div class="cc"><div class="h"><i style="background:var(${CC[c]})"></i>${D.clusters[c]}</div><div class="n">${nf(p.n_sellers)} <span style="font-size:12.5px;font-weight:500;color:var(--muted)">Seller</span></div>
+    <dl><dt>Đơn/Seller (trung vị)</dt><dd>${nf(p.n_orders)}</dd><dt>TG chuẩn bị hàng</dt><dd>${nf(p.prep_days, 2)} ngày</dd><dt>Tỷ lệ giao trễ</dt><dd>${nf(p.late_rate * 100, 1)}%</dd><dt>Tỷ lệ hủy</dt><dd>${nf(p.cancel_rate * 100, 2)}%</dd><dt>Điểm review</dt><dd>${nf(p.avg_review, 2)}</dd></dl><p>${CPOL[c]}</p></div>`; }).join("");
+  $("#sc-leg").innerHTML = order.map(c => `<span><i class="dot" style="background:var(${CC[c]})"></i>${D.clusters[c]}</span>`).join("");
+  const host = $("#c-scatter"); const f = frame(host, 360, {l: 30, r: 10, t: 10, b: 26}); const S = D.sellers;
+  const xs = S.map(s => s.x), ys = S.map(s => s.y), xl = Math.min(...xs) - 0.3, xh = Math.max(...xs) + 0.3, yl = Math.min(...ys) - 0.3, yh = Math.max(...ys) + 0.3;
+  const X = v => f.x0 + (v - xl) / (xh - xl) * (f.x1 - f.x0), Y = v => f.y1 - (v - yl) / (yh - yl) * (f.y1 - f.y0);
+  [-2, 0, 2, 4, 6].filter(v => v > xl && v < xh).forEach(v => { el("line", {x1: X(v), x2: X(v), y1: f.y0, y2: f.y1, stroke: css("--line2")}, f.svg); const t = el("text", {x: X(v), y: f.y1 + 16, "text-anchor": "middle"}, f.svg); t.textContent = v; });
+  [-2, 0, 2].filter(v => v > yl && v < yh).forEach(v => { el("line", {x1: f.x0, x2: f.x1, y1: Y(v), y2: Y(v), stroke: css("--line2")}, f.svg); const t = el("text", {x: f.x0 - 6, y: Y(v) + 4, "text-anchor": "end"}, f.svg); t.textContent = v; });
+  const xt = el("text", {x: f.x1 - 4, y: f.y0 + 12, "text-anchor": "end"}, f.svg); xt.textContent = "PC1 → chậm & trễ hơn";
+  S.forEach(s => { const c = el("circle", {cx: X(s.x), cy: Y(s.y), r: 4, fill: css(CC[s.c]), "fill-opacity": 0.8, stroke: css("--panel"), "stroke-width": 1}, f.svg);
+    c.addEventListener("mousemove", e => showTip(e, `<b>Seller ${s.id}…</b> (${s.st})<br>${D.clusters[s.c]}<br>${nf(s.n)} đơn · review ${nf(s.review, 2)}<br>Chuẩn bị ${nf(s.prep, 1)} ngày · trễ ${nf(s.late * 100, 1)}% · hủy ${nf(s.canc * 100, 1)}%`)); c.addEventListener("mouseleave", hideTip); });
+  const W = S.filter(s => s.c === 0 || s.c === 2).sort((a, b) => b.late - a.late).slice(0, 14);
+  $("#tbl-watch").innerHTML = `<thead><tr><th>Seller</th><th>Cụm</th><th class="n">Đơn</th><th class="n">Chuẩn bị</th><th class="n">Trễ</th><th class="n">Hủy</th><th class="n">Review</th></tr></thead><tbody>` +
+    W.map(s => `<tr><td class="mono">${s.id}…</td><td><span class="pill ${s.c === 2 ? "p-crit" : "p-warn"}">${s.c === 2 ? "Hay hủy" : "Chậm xử lý"}</span></td><td class="n">${nf(s.n)}</td><td class="n">${nf(s.prep, 1)} ng</td><td class="n">${nf(s.late * 100, 1)}%</td><td class="n">${nf(s.canc * 100, 1)}%</td><td class="n">${nf(s.review, 2)}</td></tr>`).join("") + "</tbody>";
+}
+
+/* ---------- 06 report ---------- */
+function reportText() {
+  const rs = recos(), crit = rs.filter(x => x.p.st === "crit"), warn = rs.filter(x => x.p.st === "warn");
+  const totQ = rs.reduce((a, x) => a + x.p.q, 0), cap = rs.reduce((a, x) => a + x.p.capital, 0);
+  const m = D.monthly, n = m.ym.length; const P = D.profile;
+  const top3 = rs.slice(0, 3).map(({r, p}) => `${VN(r.category)} (${nf(p.q)} đv)`).join(", ");
+  const pol = D.policy, pn = Object.keys(pol);
+  return {
+    html: `<h3>1. Tóm tắt</h3><p>Tuần bắt đầu 20/08/2018 hệ thống ghi nhận <b>${crit.length}</b> danh mục có nguy cơ hết hàng và <b>${warn.length}</b> danh mục dưới điểm đặt hàng lại trong ${D.reco.length} danh mục chủ lực. Tổng lượng nhập đề xuất là <b>${nf(totQ)}</b> đơn vị, ước tính vốn khoảng <b>${nf(cap / 1000, 1)} nghìn BRL</b> theo giá bán bình quân.</p>
+    <h3>2. Nhập hàng ưu tiên</h3><ul>${rs.slice(0, 5).map(({r, p}) => `<li>${VN(r.category)}: tồn ${nf(r.on_hand_sim)}, ROP ${nf(p.rop)}, đề xuất nhập <b>${nf(p.q)}</b> đv (${ST[p.st][1].toLowerCase()}).</li>`).join("")}</ul>
+    <h3>3. Nhu cầu</h3><p>Nhu cầu tháng 08/2018 đạt ${nf(m.demand[n - 1])} dòng sản phẩm, ${m.demand[n - 1] >= m.demand[n - 2] ? "tăng" : "giảm"} ${nf(Math.abs(m.demand[n - 1] / m.demand[n - 2] - 1) * 100, 1)}% so với tháng trước. Mô hình Gradient Boosting có WAPE ${nf(D.fc_metrics["Gradient Boosting (HistGB)"].WAPE, 1)}% theo tuần, thấp hơn Naive (${nf(D.fc_metrics["Naive (tuần trước)"].WAPE, 1)}%) và trung bình trượt 4 tuần (${nf(D.fc_metrics["Moving Average 4 tuần"].WAPE, 1)}%).</p>
+    <h3>4. Rủi ro giao hàng</h3><p>Trong 8 tháng đầu 2018, tỷ lệ giao trễ là ${nf(D.risk.late_rate_test * 100, 1)}%. Kiểm tra trước 20% đơn có điểm rủi ro cao nhất giúp phát hiện ${nf(D.risk.lift["top20%"], 1)}% số đơn trễ. Yếu tố chính: số ngày giao đã hứa với khách và tỷ lệ trễ lịch sử của bang nhận hàng.</p>
+    <h3>5. Nhà bán hàng</h3><p>${nf(P.find(x => x.cluster === 0).n_sellers)} Seller thuộc cụm Chậm xử lý (chuẩn bị hàng trung bình ${nf(P.find(x => x.cluster === 0).prep_days, 1)} ngày, trễ ${nf(P.find(x => x.cluster === 0).late_rate * 100, 1)}%) và ${nf(P.find(x => x.cluster === 2).n_sellers)} Seller thuộc cụm Hay hủy đơn cần được nhắc nhở trong tuần.</p>
+    <h3>6. Đề xuất quyết định</h3><ul><li>Duyệt đơn nhập cho các danh mục ưu tiên: ${top3}.</li><li>Áp dụng Safety Stock ở mức phục vụ 95%: trong mô phỏng 15 tuần, tỷ lệ nhu cầu không đáp ứng giảm từ ${nf(100 - pol[pn[0]].fill_rate, 2)}% xuống ${nf(100 - pol[pn[2]].fill_rate, 2)}%, đổi lại tồn kho bình quân tăng từ ${nf(pol[pn[0]].avg_end_inv)} lên ${nf(pol[pn[2]].avg_end_inv)} đv/danh mục.</li><li>Chuyển danh sách đơn rủi ro cao cho bộ phận vận hành để chăm sóc chủ động.</li></ul>
+    <p class="note">Quyết định cuối cùng thuộc về nhà quản trị. Tồn kho hiện tại trong bản demo được mô phỏng từ chính sách nhập hàng theo kinh nghiệm vì bộ dữ liệu Olist không có số liệu tồn kho.</p>`};
+}
+function rReport() { $("#report").innerHTML = reportText().html; }
+$("#copy-rep").addEventListener("click", () => copy($("#report").innerText, "Đã sao chép báo cáo"));
+function copy(text, msg) {
+  const done = () => { const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 1800); };
+  try { navigator.clipboard.writeText(text).then(done, () => fallback()); } catch (e) { fallback(); }
+  function fallback() { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); done(); } catch (e) {} ta.remove(); }
+}
+go((location.hash || "").slice(1) || "tongquan");
+</script>

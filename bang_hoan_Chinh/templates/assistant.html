@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block sub %}<p class="sub">Hỏi bằng tiếng Việt như hỏi một nhân viên phân tích. AI chỉ được đọc số liệu, không sửa được dữ liệu, và luôn ghi rõ nguồn.</p>{% endblock %}
+{% block content %}
+<section class="card chat">
+  <div id="log" class="log" aria-live="polite"></div>
+  <div class="chips" id="ideas"></div>
+  <form id="f"><textarea id="q" rows="2" placeholder="Gõ câu hỏi, ví dụ: Ô tô tuần tới nên nhập bao nhiêu?" aria-label="Câu hỏi"></textarea><button class="btn primary">Gửi</button></form>
+</section>
+{% endblock %}
+{% block script %}
+<script>
+const hist=[],log=$('#log');
+['Tuần này cần nhập gấp danh mục nào?','Danh mục Giường-bàn-tắm nên nhập bao nhiêu?','Lô nhập 300 triệu đồng ai được duyệt?','5 đơn rủi ro nhất là đơn nào?','Nhà bán hàng hay hủy đơn xử lý thế nào?'].forEach(t=>$('#ideas').append(el('button',{class:'btn',type:'button',onclick(){$('#q').value=t;send()}},t)));
+function bubble(role,...c){const b=el('div',{class:'msg '+role},...c);log.append(b);log.scrollTop=log.scrollHeight;return b}
+bubble('bot',el('div',{},el('b',{},'Xin chào! Mình là trợ lý kho vận.'),
+  el('p',{style:'margin:6px 0 4px'},'Bạn có thể hỏi mình bằng tiếng Việt, ví dụ:'),
+  el('ul',{style:'margin:0;padding-left:20px'},el('li',{},'Tuần này nên nhập gấp danh mục nào, bao nhiêu hàng?'),
+    el('li',{},'Đơn nào có nguy cơ giao trễ cao nhất?'),el('li',{},'Nhà bán hàng hay hủy đơn thì xử lý ra sao?'),el('li',{},'Quy định duyệt lô nhập hàng là gì?')),
+  el('p',{class:'small muted',style:'margin-top:6px'},'Bấm một câu gợi ý bên dưới hoặc gõ câu hỏi rồi nhấn Enter. Mã [QĐ-..] trong câu trả lời là quy định được trích dẫn.')));
+async function send(){
+  const q=$('#q').value.trim();if(!q)return;$('#q').value='';bubble('user',q);
+  const tip=el('span',{class:'muted'},'Đang xử lý... 0s'),t0=Date.now(),tick=setInterval(()=>tip.textContent=`Đang xử lý... ${Math.round((Date.now()-t0)/1000)}s`,1000);
+  const w=bubble('bot',tip);
+  try{
+    const r=await api('/api/chat',{question:q,history:hist});clearInterval(tick);
+    r.secs=((Date.now()-t0)/1000).toFixed(1);
+    hist.push({role:'user',content:q},{role:'assistant',content:r.text});
+    w.replaceChildren(rich(r.text),aiMeta(r),
+      r.steps.length?el('details',{},el('summary',{},`Xem AI đã tra ${r.steps.length} nguồn dữ liệu`),...r.steps.map(s=>el('code',{},`${s.tool}(${JSON.stringify(s.args)})`))):null);
+  }catch(e){clearInterval(tick);w.replaceChildren(el('span',{class:'err'},e.message))}
+  log.scrollTop=log.scrollHeight;
+}
+$('#f').onsubmit=e=>{e.preventDefault();send()};
+$('#q').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}};
+</script>
+{% endblock %}

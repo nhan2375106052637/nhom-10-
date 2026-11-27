@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block sub %}<p class="sub">Thử "nếu… thì sao" trước khi chốt: ví dụ khuyến mãi, nhà cung cấp giao chậm. Hệ thống tính lại ngay.</p>{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="head"><h2>Chọn tình huống</h2><label class="small muted">Danh mục <select id="cat" aria-label="Danh mục"></select></label></div>
+  <div class="presets">
+    <button class="btn" data-p="promo">Sắp khuyến mãi (nhu cầu +20%)</button>
+    <button class="btn" data-p="slow">Nhà cung cấp giao chậm (2 tuần)</button>
+    <button class="btn" data-p="safe">Muốn an toàn hơn (mức phục vụ 99%)</button>
+    <button class="btn" data-p="low">Mùa thấp điểm (nhu cầu −20%)</button>
+  </div>
+  <p class="howto">Hoặc tự kéo thanh trượt bên dưới:</p>
+  <div class="grid two">
+    <div class="sliders">
+      <label>Thời gian nhà cung cấp giao hàng <output id="leadO"></output><input type="range" id="lead" min="0.5" max="3" step="0.5" value="1"></label>
+      <label>Mức an toàn mong muốn <output id="slO"></output>
+        <select id="sl"><option value="0.9">90%</option><option value="0.95" selected>95%</option><option value="0.975">97,5%</option><option value="0.99">99%</option></select></label>
+    </div>
+    <div class="sliders">
+      <label>Nhu cầu thay đổi so với dự báo <output id="demO"></output><input type="range" id="dem" min="-30" max="50" step="5" value="0"></label>
+      <label>Tồn kho hiện tại <output id="stO"></output><input type="range" id="st" min="0" step="1"></label>
+    </div>
+  </div>
+  <div class="actions"><button class="btn" id="reset">Về phương án gốc</button></div>
+</section>
+<section class="grid two">
+  <div class="card"><h2>Kết quả: gốc so với kịch bản</h2><div class="verdict" id="verdict"></div><div class="cmp" id="cmp"></div></div>
+  <div class="card"><h2>Tồn kho đang ở vùng nào?</h2><p class="howto">Vạch xanh đậm là tồn kho hiện tại. Nằm trong vùng đỏ hoặc vàng thì cần nhập.</p><div id="pos"></div><div id="tips"></div></div>
+</section>
+<section class="card">
+  <div class="head"><h2>Bước cuối: tờ trình nhập hàng</h2><button class="btn primary" id="note">AI viết ghi chú</button></div>
+  <div id="noteOut" class="muted">AI soạn ghi chú gửi trưởng bộ phận mua hàng từ đúng các con số của kịch bản; bạn sửa rồi duyệt.</div>
+</section>
+{% endblock %}
+{% block script %}
+<script>
+const qs=new URLSearchParams(location.search);let cur,base;
+const z={0.9:1.282,0.95:1.645,0.975:1.96,0.99:2.326};
+function params(){return{cat:$('#cat').value,lead:+$('#lead').value,service:+$('#sl').value,demand:+$('#dem').value,stock:+$('#st').value}}
+async function load(){
+  const p=params();$('#leadO').textContent=fmt.num(p.lead,1)+' tuần';$('#slO').textContent=fmt.pct(p.service*100,1);
+  $('#demO').textContent=(p.demand>0?'+':'')+p.demand+'%';$('#stO').textContent=fmt.int(p.stock)+' đv';
+  const d=await api(`/api/whatif?cat=${p.cat}&lead=${p.lead}&service=${p.service}&demand=${p.demand}&stock=${p.stock}`);
+  base=d.base;cur=d.scenario;const b=d.base,s=d.scenario;
+  const rows=[['Nên nhập (Q)','q',0],['Số tiền cần (đ)','capital',0],['Bán dự kiến/tuần','yhat',0],['Tồn an toàn (SS)','ss',0],['Điểm đặt hàng (ROP)','rop',0],['Mức tồn tối đa (S)','s',0],['Độ lệch dự báo (σ)','sigma',1],['Hệ số an toàn (z)','z',3]];
+  const dq=s.q-b.q;
+  $('#verdict').replaceChildren(el('span',{},'Với kịch bản này, nên nhập ',el('b',{},fmt.int(s.q)+' sản phẩm'),` (khoảng ${fmt.money(s.capital)}), `,
+    Math.abs(dq)<0.5?'bằng phương án gốc.':el('b',{},`${dq>0?'nhiều':'ít'} hơn gốc ${fmt.int(Math.abs(dq))} sản phẩm.`)));
+  $('#cmp').replaceChildren(el('span',{class:'h'},'Chỉ số'),el('span',{class:'h'},'Gốc'),el('span',{class:'h'},'Kịch bản'),
+    ...rows.flatMap(([l,k,dg])=>{const ch=s[k]-b[k];return[el('span',{},term(l)),el('span',{},fmt.num(b[k],dg)),el('b',{class:Math.abs(ch)<1e-6?'':ch>0?'up':'down'},fmt.num(s[k],dg))]}),
+    el('span',{},'Trạng thái'),statusBadge(b.status),statusBadge(s.status));
+  const max=Math.max(s.s*1.45,s.stock*1.1,1),X=v=>Math.min(100,v/max*100)+'%';
+  const zone=(a,c,col)=>el('div',{class:'zone',style:`left:${X(a)};width:calc(${X(c)} - ${X(a)});background:${col}`});
+  const mk=(v,t,cls='')=>el('div',{class:'mk '+cls,style:`left:${X(v)}`},el('span',{},t));
+  $('#pos').replaceChildren(el('div',{class:'posbar'},zone(0,s.yhat*s.lead,'#e8a29b'),zone(s.yhat*s.lead,s.rop,'#efd78f'),zone(s.rop,1.3*s.s,'#b9e0c8'),zone(1.3*s.s,max,'#f2c9a6'),
+    mk(s.rop,'ROP '+fmt.int(s.rop)),mk(s.s,'S '+fmt.int(s.s)),mk(s.stock,'Tồn '+fmt.int(s.stock),'cur')),
+    el('div',{class:'legend'},...[['Nguy cơ hết hàng','#e8a29b'],['Dưới ROP','#efd78f'],['An toàn','#b9e0c8'],['Tồn dư','#f2c9a6']].map(([n,c])=>el('span',{},el('i',{class:'sq',style:`--c:${c}`}),n))));
+  const pct=(a,c)=>c?((a/c-1)*100):0,tips=[];
+  if(p.lead!==1)tips.push(`Lead time ${fmt.num(p.lead,1)} tuần làm Safety Stock ${pct(d.only_lead.ss,b.ss)>=0?'tăng':'giảm'} ${fmt.num(Math.abs(pct(d.only_lead.ss,b.ss)),0)}% và ROP thành ${fmt.int(d.only_lead.rop)}.`);
+  if(p.service!==0.95)tips.push(`Mức phục vụ ${fmt.pct(p.service*100,1)} làm Safety Stock ${pct(d.only_service.ss,b.ss)>=0?'tăng':'giảm'} ${fmt.num(Math.abs(pct(d.only_service.ss,b.ss)),0)}% so với 95%.`);
+  if(p.demand)tips.push(`Nhu cầu ${p.demand>0?'tăng':'giảm'} ${Math.abs(p.demand)}% làm lượng nhập thành ${fmt.int(s.q)} đơn vị.`);
+  if(!tips.length)tips.push('Đang xem phương án gốc. Bấm một tình huống phía trên để so sánh.');
+  $('#tips').replaceChildren(el('ul',{class:'rules'},...tips.map(t=>el('li',{class:'small'},t))),
+    el('details',{},el('summary',{},'Xem công thức tính'),el('p',{class:'small'},`SS = z·σ·√(L+R) = ${fmt.num(s.z,3)} × ${fmt.num(s.sigma,1)} × √(${fmt.num(s.lead,1)}+1); ROP = ŷ·L + SS; S = ŷ·(L+R) + SS; Q = max(S − tồn, 0).`)));
+}
+(async()=>{
+  const f=await api('/api/forecast');f.plan.forEach(p=>$('#cat').add(new Option(`${p.name} · ${p.status}`,p.category)));
+  const c=qs.get('cat');if(c)$('#cat').value=c;await reset();
+})();
+async function reset(){const p=(await api('/api/forecast?cat='+$('#cat').value)).plan.find(x=>x.category===$('#cat').value);
+  $('#lead').value=1;$('#sl').value='0.95';$('#dem').value=0;$('#st').max=Math.ceil(Math.max(p.s*2,p.stock*1.5));$('#st').value=Math.round(p.stock);$('#noteOut').textContent='';await load()}
+const PRESET={promo:{dem:20},slow:{lead:2},safe:{sl:'0.99'},low:{dem:-20}};
+document.querySelectorAll('.presets .btn').forEach(b=>b.onclick=()=>{const p=PRESET[b.dataset.p];
+  $('#lead').value=p.lead||1;$('#sl').value=p.sl||'0.95';$('#dem').value=p.dem||0;
+  document.querySelectorAll('.presets .btn').forEach(x=>x.classList.toggle('primary',x===b));load()});
+['lead','dem','st'].forEach(i=>$('#'+i).oninput=load);$('#sl').onchange=load;$('#cat').onchange=reset;$('#reset').onclick=()=>{document.querySelectorAll('.presets .btn').forEach(x=>x.classList.remove('primary'));reset()};
+$('#note').onclick=()=>{const p=params();aiCall('#noteOut','#note',()=>api('/api/whatif/note',p),{edit:true,review:{agent:'PurchaseAgent',target:'category:'+p.cat,action:`Duyệt nhập ${Math.round(cur.q)} đơn vị (${fmt.money(cur.capital)})`,title:'Bản nháp ghi chú nhập hàng'}})};
+</script>
+{% endblock %}

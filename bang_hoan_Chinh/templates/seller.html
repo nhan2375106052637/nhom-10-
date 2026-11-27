@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block sub %}<p class="sub" id="sub"></p>{% endblock %}
+{% block content %}
+<section class="cards4" id="groups"></section>
+<section class="split">
+  <div class="card list"><h2>Nhà bán hàng cần theo dõi</h2><p class="howto">Bấm một nhà bán hàng để xem chi tiết và soạn thư nhắc.</p><div id="watch" class="rows"></div></div>
+  <div class="card" id="detail"><p class="muted">Chọn một nhà bán hàng.</p></div>
+</section>
+<details class="tech">
+  <summary>Chi tiết kỹ thuật <span>(bản đồ phân cụm, cách chọn số nhóm: dành cho người phân tích)</span></summary>
+  <section class="grid two">
+    <div class="card"><h2>Bản đồ phân cụm (PCA 2 chiều)</h2><div id="pca" class="chart tall"></div><p class="note" id="pcaN"></p></div>
+    <div class="card"><h2>Chọn số nhóm K (Silhouette)</h2><div id="sil" class="chart"></div><p class="note" id="silN"></p></div>
+  </section>
+</details>
+{% endblock %}
+{% block script %}
+<script>
+let D;const qs=new URLSearchParams(location.search);const COL={Star:'--s1',Premium:'--s3',Slow:'--s2',Risky:'--s4'};
+const cv=k=>getComputedStyle(document.documentElement).getPropertyValue(COL[k]).trim();
+async function sel(id){document.querySelectorAll('#watch .row').forEach(r=>r.classList.toggle('on',r.dataset.id===id));
+  const s=await api('/api/seller/'+id);
+  fill($('#detail'),el('div',{class:'head'},el('h2',{},'Nhà bán hàng '+s.id),el('span',{class:'badge'},s.name)),
+    el('div',{class:'stats'},stat('Số đơn',fmt.int(s.orders)),stat('Chuẩn bị (trung vị)',fmt.num(s.prep,1)+' ngày'),stat('Bàn giao quá hạn',fmt.pct(s.handoff*100)),
+      stat('Giao trễ',fmt.pct(s.late*100)),stat('Tỷ lệ hủy',fmt.pct(s.cancel*100,2)),stat('Điểm đánh giá TB',fmt.num(s.review,2)+'★')),
+    el('p',{},el('b',{},'Nên làm: '),s.policy),
+    s.restrict?el('p',{class:'callout bad'},'Tỷ lệ hủy vượt 5%: thuộc diện xem xét hạn chế theo QĐ-05. Hệ thống không tự khóa; cần quản lý duyệt.'):null,
+    el('div',{class:'actions'},el('button',{class:'btn primary',id:'nt',onclick(){aiCall('#out','#nt',()=>api(`/api/seller/${s.id}/note`,{}),{edit:true,review:{agent:'SellerCoachAgent',target:'seller:'+s.id,action:s.restrict?'Gửi thư và xem xét hạn chế':'Gửi thư nhắc nhở',title:'Bản nháp thư gửi Seller'}})}},'AI soạn thư nhắc nhà bán hàng')),
+    el('div',{id:'out'}));
+}
+(async()=>{D=await api('/api/seller');
+  $('#sub').textContent=`Hệ thống chia ${fmt.int(D.n)} nhà bán hàng (từ 20 đơn trở lên) thành 4 nhóm theo 7 chỉ số vận hành (thuật toán K-Means).`;
+  $('#groups').replaceChildren(...D.groups.map(g=>el('div',{class:'gcard',style:`--c:${cv(g.id)}`},el('h3',{},g.name),el('strong',{style:'font-size:22px'},fmt.int(g.n)+' nhà bán hàng'),
+    el('p',{},`Chuẩn bị hàng ${fmt.num(g.prep,1)} ngày · giao trễ ${fmt.pct(g.late*100)} · hủy ${fmt.pct(g.cancel*100,1)} · đánh giá ${fmt.num(g.review,2)}★`),
+    el('p',{style:'margin-top:6px;color:var(--text)'},el('b',{},'Nên làm: '),g.policy))));
+  const by=k=>D.points.filter(p=>p.g===k);
+  Charts.scatter('#pca',['Star','Premium','Slow','Risky'].map(k=>({name:k,points:by(k)})),{xlabel:'Thành phần chính 1',ylabel:'Thành phần chính 2',r:4,colors:['Star','Premium','Slow','Risky'].map(cv),onClick:p=>sel(p.id)});
+  $('#pcaN').textContent=`Hai thành phần giải thích ${fmt.pct((D.pca_var[0]+D.pca_var[1])*100,0)} phương sai. Bấm một điểm để xem Seller.`;
+  Charts.line('#sil',{x:D.curve.map(c=>'K='+c.k),series:[{name:'Silhouette',values:D.curve.map(c=>c.silhouette),dots:true}],fmt:v=>fmt.num(v,3)});
+  $('#silN').textContent=`K = 4 có Silhouette ${fmt.num(D.silhouette,3)}: thấp hơn K = 2, 3 nhưng tách được nhóm hay hủy đơn với nhóm chậm xử lý để đặt chính sách riêng.`;
+  $('#watch').replaceChildren(...D.watch.map(w=>el('button',{class:'row','data-id':w.id,onclick(){sel(w.id)}},el('span',{class:'badge',style:`border-color:${cv(w.group)}`},w.group),
+    el('span',{class:'grow'},el('b',{},w.id),el('small',{},`${fmt.int(w.orders)} đơn · chuẩn bị ${fmt.num(w.prep,1)} ngày · hủy ${fmt.pct(w.cancel*100,1)}`)),el('b',{},fmt.pct(w.late*100)))));
+  sel(qs.get('id')||D.watch[0].id);
+})();
+</script>
+{% endblock %}

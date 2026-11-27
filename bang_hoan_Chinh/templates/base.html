@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }} • Kho Vận DSS</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script>try{const t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+{% set DESC = {
+  'overview':'Việc cần làm tuần này','forecast':'Nên nhập bao nhiêu','whatif':'Thử "nếu… thì sao"',
+  'risk':'Đơn có thể giao trễ','seller':'Nhà bán hàng cần theo dõi','report':'Báo cáo gửi cấp trên',
+  'assistant':'Hỏi bằng tiếng Việt','settings':'Key AI, nhật ký'} %}
+{% set GUIDE = {
+  'overview':('Xem nhanh tình hình tuần này và việc nào cần xử lý trước.',
+    ['Nhìn hàng ô số liệu: ô màu đỏ là chỗ cần chú ý.','Xem danh sách "Việc cần làm tuần này", bấm "Xử lý" để mở đúng trang.','Bấm "Viết tóm tắt" nếu muốn AI tóm tắt thành vài câu.']),
+  'forecast':('Biết tuần tới mỗi danh mục bán được bao nhiêu và nên nhập bao nhiêu hàng.',
+    ['Đọc ô tóm tắt màu xanh: tổng số hàng và số tiền cần nhập.','Xem bảng "Nên nhập": danh mục đỏ (Nguy cơ hết hàng) xử lý trước.','Bấm một dòng để thử kịch bản, hoặc bấm "Duyệt danh sách nhập".']),
+  'whatif':('Thử các tình huống trước khi chốt lượng nhập, ví dụ khuyến mãi hay nhà cung cấp giao chậm.',
+    ['Chọn danh mục ở góc phải.','Bấm một tình huống có sẵn, hoặc tự kéo thanh trượt.','Xem cột "Kịch bản" thay đổi, rồi bấm "AI viết ghi chú" và Duyệt.']),
+  'risk':('Tìm sớm các đơn có thể giao trễ để xử lý trước khi khách phàn nàn.',
+    ['Chọn một đơn trong danh sách bên trái (đã xếp từ rủi ro cao xuống).','Đọc "Nên làm gì" và lý do ở biểu đồ: thanh đỏ làm tăng rủi ro.','Bấm "AI giải thích" để có lời giải thích bằng tiếng Việt.']),
+  'seller':('Biết nhà bán hàng nào tốt, nhà bán hàng nào hay chậm hoặc hay hủy đơn.',
+    ['Xem 4 nhóm nhà bán hàng và chính sách cho từng nhóm.','Chọn một nhà bán hàng trong danh sách cần theo dõi.','Bấm "AI soạn thư" để nhắc nhở, sửa rồi Duyệt.']),
+  'report':('Lấy báo cáo tuần để gửi cấp trên.',
+    ['Bản bên trái luôn có sẵn, bấm "Sao chép" để dùng ngay.','Muốn văn phong tự nhiên hơn thì bấm "AI viết lại".','Sửa bản nháp nếu cần rồi bấm Duyệt.']),
+  'assistant':('Hỏi đáp bằng tiếng Việt về nhập hàng, tồn kho, đơn rủi ro, nhà bán hàng và quy định.',
+    ['Bấm một câu hỏi gợi ý, hoặc tự gõ câu hỏi.','Đọc câu trả lời: mã [QĐ-..] là quy định được trích dẫn.','Nhãn xanh "Số liệu khớp dữ kiện" nghĩa là AI không bịa số.']),
+  'settings':('Kết nối AI và xem lại mọi lần AI đã chạy.',
+    ['Dán API key Gemini, bấm Lưu.','Bấm "Kiểm tra kết nối" để chắc AI chạy được.','Xem Nhật ký kiểm toán ở cuối trang.']),
+} %}
+<aside class="side">
+  <a class="brand" href="/"><span class="mark" aria-hidden="true"></span><span><b>Kho Vận DSS</b><small>Dự báo nhu cầu · Nhập hàng · Tồn kho</small></span></a>
+  <nav>
+    <div class="navh">Phân hệ</div>
+    {% for url, name, no, label in pages %}
+    {% if no == 'AI' %}<div class="navh">Trợ lý AI</div>{% endif %}
+    <a href="{{ url }}" class="{{ 'on' if name == active }}"><i>{{ no }}</i><span>{{ label }}<small>{{ DESC[name] }}</small></span></a>
+    {% endfor %}
+  </nav>
+  <div class="side-foot">
+    <div class="pill"><i style="background:#8fa0bb"></i>Tuần quyết định: {{ week }}</div>
+    <div class="pill {{ 'ok' if ai else 'off' }}"><i></i>{{ 'AI đã kết nối key' if ai else 'AI: chế độ theo mẫu' }}</div>
+    {% if sample %}<div class="pill warn"><i></i>Đang dùng dữ liệu mẫu</div>{% else %}<div class="pill ok"><i></i>Dữ liệu Olist thật</div>{% endif %}
+    <button class="link" id="themeBtn" type="button">Đổi giao diện sáng / tối</button>
+    <small style="color:#6f82a3;padding:0 8px">Nhóm 10 · 71ITAI40303</small>
+  </div>
+</aside>
+<main>
+  <header class="top"><h1>{{ title }}</h1>{% block sub %}{% endblock %}</header>
+  {% set g = GUIDE[active] %}
+  <details class="guide" id="guide" data-page="{{ active }}" open>
+    <summary><b>Trang này giúp bạn:</b> {{ g[0] }} <span class="muted small">(bấm để ẩn/hiện hướng dẫn)</span></summary>
+    <ol>{% for step in g[1] %}<li>{{ step }}</li>{% endfor %}</ol>
+    <p class="small muted">Thấy dấu <span class="q">?</span> cạnh một thuật ngữ thì rê chuột vào để xem giải thích.</p>
+  </details>
+  {% block content %}{% endblock %}
+</main>
+<div id="tip" class="tip" hidden></div>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% block script %}{% endblock %}
+</body>
+</html>

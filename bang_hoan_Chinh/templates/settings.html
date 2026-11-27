@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block sub %}<p class="sub">Kết nối AI và xem lại mọi lần AI đã chạy. Key chỉ lưu trên máy này, không hiện lại trên trình duyệt.</p>{% endblock %}
+{% block content %}
+<section class="grid two">
+  <form class="card form" id="f">
+    <h2>Kết nối AI</h2>
+    <label>Nhà cung cấp<select id="provider"></select></label>
+    <label>API key<input id="key" type="password" autocomplete="off" placeholder="Dán key vào đây"></label>
+    <p class="note" id="hint"></p>
+    <label>Mô hình, cách nhau bằng dấu phẩy (thứ tự dự phòng)<input id="models"></label>
+    <label>Base URL<input id="base"></label>
+    <div class="actions"><button class="btn primary">Lưu</button><button class="btn" type="button" id="test">Kiểm tra kết nối</button></div>
+    <p id="msg" class="small"></p>
+  </form>
+  <div class="card"><h2>Chế độ hoạt động</h2>
+    <ul class="rules"><li>Có key: các nút AI gọi LLM thật, Privacy Agent thay mã khách hàng, tên, điện thoại, email bằng biến giả trước khi gửi.</li><li>Không có key hoặc LLM lỗi: dùng bản theo mẫu (rule-based) như thiết kế dự phòng ở mục 2.4, nhãn trên kết quả ghi rõ.</li><li>Nút Duyệt và Thực thi chỉ ghi nhật ký, không gửi email thật.</li></ul>
+  </div>
+</section>
+<section class="card"><h2>Đánh giá thành phần AI</h2><div class="stats" id="ev"></div>
+  <p class="note">Độ trung thực số liệu: tỷ lệ con số trong câu trả lời của LLM tìm thấy ở dữ kiện đầu vào. Recall@3: tỷ lệ câu hỏi kiểm thử tìm đúng quy định trong 3 kết quả đầu.</p></section>
+<section class="card"><h2>Nhật ký kiểm toán (Audit log)</h2><div class="scroll"><table id="log"></table></div></section>
+{% endblock %}
+{% block script %}
+<script>
+let P;
+async function load(){
+  const s=await api('/api/settings');P=s.providers;
+  if(!$('#provider').options.length)Object.entries(P).forEach(([k,v])=>$('#provider').add(new Option(v.label,k)));
+  $('#provider').value=s.provider;$('#models').value=s.models;$('#base').value=s.base_url;
+  $('#hint').textContent=s.key_hint?`Key hiện tại: ${s.key_hint}. Để trống nếu không đổi.`:'Chưa có key.';
+  const a=await api('/api/audit'),S=a.stats;
+  $('#ev').replaceChildren(stat('Recall@3 truy xuất',fmt.pct(S.rag.recall*100,0)),stat('Lần gọi AI',fmt.int(S.calls)),stat('Có kiểm tra số',fmt.int(S.checked)),
+    stat('Độ trung thực số liệu',S.faithful==null?'Chưa có':fmt.pct(S.faithful*100,0)),stat('Quyết định của người',fmt.int(S.decisions)),stat('Được duyệt',fmt.int(S.approved)),stat('Người sửa bản nháp',fmt.int(S.edited)));
+  table('#log',['Thời gian','Sự kiện','Tác tử','Mô hình','Trạng thái / hành động','Định danh ẩn','Nguồn'],a.rows.slice(0,40).map(r=>[r.time.replace('T',' '),r.event,r.agent||'',r.llm_model||'',r.decision?`${r.decision}: ${r.action||''}`:(r.status||''),r.pii_masked??'',(r.sources||[]).join(', ')]));
+}
+$('#provider').onchange=e=>{const p=P[e.target.value];$('#models').value=p.models;$('#base').value=p.base};
+$('#f').onsubmit=async e=>{e.preventDefault();
+  const r=await api('/api/settings',{provider:$('#provider').value,api_key:$('#key').value,models:$('#models').value,base_url:$('#base').value});
+  $('#key').value='';$('#msg').textContent=r.ready?'Đã lưu. Bấm Kiểm tra kết nối để thử.':'Đã lưu, nhưng còn thiếu key, mô hình hoặc Base URL.';await load();
+  document.querySelector('.side-foot .pill').className='pill '+(r.ready?'ok':'off');document.querySelector('.side-foot .pill').lastChild.textContent=r.ready?'AI đã kết nối key':'AI: chế độ dự phòng'};
+$('#test').onclick=async()=>{$('#msg').textContent='Đang gọi thử...';const r=await api('/api/settings/test',{});
+  $('#msg').textContent=r.ok?`Kết nối được. Mô hình: ${r.model}. Trả lời: ${r.reply}`:`Không kết nối được: ${r.error}`;await load()};
+load();
+</script>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block sub %}<p class="sub">Mỗi đơn được chấm điểm khả năng giao trễ ngay lúc khách đặt. Điểm càng cao càng nên kiểm tra trước.</p>{% endblock %}
+{% block content %}
+<section class="summary" id="sum"></section>
+<section class="split">
+  <div class="card list">
+    <div class="head"><h2>Đơn cần kiểm tra</h2><label class="small"><input type="checkbox" id="hi" checked> Chỉ đơn rủi ro cao (từ 80%)</label></div>
+    <p class="howto">Xếp từ rủi ro cao xuống. Bấm một đơn để xem lý do.</p>
+    <div id="orders" class="rows"></div>
+  </div>
+  <div class="card" id="detail"><p class="muted">Chọn một đơn để xem lý do.</p></div>
+</section>
+<details class="tech">
+  <summary>Chi tiết kỹ thuật <span>(độ chính xác mô hình, biểu đồ Gain: dành cho người phân tích)</span></summary>
+  <section class="grid two">
+    <div class="card"><h2>Biểu đồ Gain: kiểm tra theo thứ tự điểm rủi ro</h2><div id="gain" class="chart"></div><p class="note" id="gN"></p></div>
+    <div class="card"><h2>Kết quả trên tập kiểm thử 2018</h2><div class="scroll"><table id="mt"></table></div><p class="note" id="mtN"></p></div>
+  </section>
+  <section class="card" style="margin-top:16px"><h2>Yếu tố ảnh hưởng nhiều nhất (trung bình |SHAP|)</h2><div id="imp" class="chart small"></div></section>
+</details>
+{% endblock %}
+{% block script %}
+<script>
+let D,cur;const qs=new URLSearchParams(location.search);
+function list(){const o=D.orders.filter(x=>!$('#hi').checked||x.risk>=.8);
+  $('#orders').replaceChildren(...o.map(x=>el('button',{class:'row'+(cur&&x.id.startsWith(cur)?' on':''),'data-id':x.short,onclick(){sel(x.short)}},
+    el('span',{class:'grow'},el('b',{},x.short),el('small',{},`Tuyến ${x.route} · thực tế: ${x.actual}`)),el('b',{},fmt.pct(x.risk*100)))))}
+async function sel(id){cur=id;document.querySelectorAll('#orders .row').forEach(r=>r.classList.toggle('on',r.dataset.id===id));
+  const d=await api('/api/order/'+id);
+  fill($('#detail'),el('div',{class:'head'},el('h2',{},'Đơn '+d.short),el('span',{class:'badge st '+(d.risk>=.8?'critical':'medium')},fmt.pct(d.risk*100)+' rủi ro')),
+    el('p',{class:'muted'},`${d.route} · Seller ${d.seller} · Thực tế: ${d.actual}`),
+    el('h3',{},'Nên làm gì'),el('ul',{class:'rules'},...d.actions.map(a=>el('li',{},a))),
+    el('h3',{},term('Vì sao đơn này bị chấm rủi ro? (SHAP)')),
+    el('p',{class:'howto'},'Thanh đỏ là yếu tố làm tăng nguy cơ trễ, thanh xanh làm giảm. Thanh càng dài, ảnh hưởng càng lớn.'),
+    el('div',{id:'wf',class:'chart'}),
+    el('p',{class:'note'},`Mức nền ${fmt.pct(d.base_prob*100)} là tỷ lệ trễ trung bình; các yếu tố cộng lại đưa đơn này lên ${fmt.pct(d.risk*100)}. Đây là cách mô hình đánh giá, không phải nguyên nhân chắc chắn.`),
+    el('div',{class:'actions'},el('button',{class:'btn primary',id:'exp',onclick(){aiCall('#expOut','#exp',()=>api(`/api/order/${id}/explain`,{}),{review:{agent:'RiskExplainer',target:'order:'+id,action:d.actions[0],title:'Đề xuất xử lý đơn'}})}},'AI giải thích')),
+    el('div',{id:'expOut'}));
+  Charts.waterfall('#wf',d.shap.map(s=>({label:`${s.label}: ${s.value}`,value:s.log_odds})),d.base);
+}
+(async()=>{D=await api('/api/risk');
+  table('#mt',['Mô hình','AUC-ROC','PR-AUC','Precision','Recall','F1'],Object.entries(D.table).map(([k,v])=>[k,fmt.num(v.auc,3),fmt.num(v.pr_auc,3),fmt.pct(v.precision*100),fmt.pct(v.recall*100),fmt.num(v.f1,3)]));
+  $('#mtN').textContent=`Huấn luyện ${fmt.int(D.split.train)} đơn năm 2017 (trễ ${fmt.pct(D.split.train_late*100)}), kiểm thử ${fmt.int(D.split.test)} đơn 01–08/2018 (trễ ${fmt.pct(D.split.test_late*100)}). Ngưỡng 0,5, class_weight balanced.`;
+  Charts.line('#gain',{x:D.gain_curve.map(g=>fmt.pct(g.share*100,0)),series:[{name:'Mô hình',values:D.gain_curve.map(g=>g.caught*100),dots:true},{name:'Chọn ngẫu nhiên',values:D.gain_curve.map(g=>g.share*100),dash:true}],fmt:v=>fmt.pct(v)});
+  const g20=D.gain.find(g=>Math.abs(g.share-.2)<1e-6);
+  const nh=D.orders.filter(x=>x.risk>=.8).length;
+  $('#sum').replaceChildren(el('div',{},'Có ',el('span',{class:'big'},fmt.int(nh)+' đơn'),' rủi ro giao trễ từ 80% trở lên cần kiểm tra.'),
+    el('div',{class:'small',style:'margin-top:4px'},`Kiểm tra 20% đơn rủi ro nhất là bắt được ${fmt.pct(g20.caught*100)} đơn trễ, gấp ${fmt.num(g20.caught/.2,2)} lần chọn ngẫu nhiên.`));
+  $('#gN').textContent=`Kiểm tra 20% đơn rủi ro nhất phát hiện ${fmt.pct(g20.caught*100)} đơn trễ, gấp ${fmt.num(g20.caught/.2,2)} lần chọn ngẫu nhiên.`;
+  Charts.bars('#imp',D.importance,{fmt:v=>fmt.num(v,3)});
+  list();sel(qs.get('order')||D.orders[0].short);
+})();
+$('#hi').onchange=list;
+</script>
+{% endblock %}

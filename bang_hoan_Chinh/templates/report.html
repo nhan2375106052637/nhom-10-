@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block sub %}<p class="sub">Báo cáo tuần tự động để gửi cấp trên. Bản bên trái luôn có sẵn; bấm "AI viết lại" để có văn phong tự nhiên hơn.</p>{% endblock %}
+{% block content %}
+<section class="grid two">
+  <div class="card"><div class="head"><h2>Bản theo mẫu (rule-based)</h2><button class="btn" id="cp1">Sao chép</button></div><pre class="report" id="rule"></pre></div>
+  <div class="card"><div class="head"><h2>Bản do AI viết lại</h2><button class="btn primary" id="ai">AI viết lại</button></div>
+    <div id="aiOut" class="muted">AI chỉ được dùng các con số trong bản theo mẫu; Privacy Agent ẩn định danh trước khi gửi; mọi con số được kiểm tra lại.</div></div>
+</section>
+{% endblock %}
+{% block script %}
+<script>
+(async()=>{const d=await api('/api/report');$('#rule').textContent=d.text;
+  $('#cp1').onclick=async()=>{try{await navigator.clipboard.writeText(d.text);$('#cp1').textContent='Đã sao chép'}catch(e){}};
+  $('#ai').onclick=()=>aiCall('#aiOut','#ai',()=>api('/api/report/ai',{}),{edit:true,review:{agent:'ReportAgent',target:'report:'+d.week,action:'Gửi báo cáo tuần cho trưởng bộ phận',title:'Bản nháp báo cáo tuần'}});
+})();
+</script>
+{% endblock %}
